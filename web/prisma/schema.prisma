@@ -1,0 +1,225 @@
+// Shared database schema — source of truth for the whole system.
+// The Next.js web layer owns this schema; the FastAPI AI service
+// mirrors these tables via SQLAlchemy (see ai-service/app/models.py)
+// and reads/writes the same PostgreSQL database.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled connection (Supabase transaction pooler, port 6543)
+  directUrl = env("DIRECT_URL") // direct connection — used by db push / migrate (port 5432)
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  HOD
+  ADMIN
+}
+
+enum QueryStatus {
+  SUBMITTED // received, awaiting classification
+  CLASSIFYING // AI pipeline is processing
+  ROUTED // assigned to a department / instructor
+  IN_PROGRESS // staff is working on it
+  RESOLVED // answered / resolved
+  ESCALATED // escalated to HOD (24h rule or manual)
+  CLOSED // archived after resolution
+}
+
+enum QueryPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum QueryChannel {
+  WEB
+  EMAIL
+  WHATSAPP
+}
+
+// ---------------------------------------------------------------------------
+// Organizations & people
+// ---------------------------------------------------------------------------
+
+model Department {
+  id        String      @id @default(cuid())
+  name      String
+  code      String      @unique
+  users     User[]
+  queries   Query[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("departments")
+}
+
+model User {
+  id               String           @id @default(cuid())
+  name             String?
+  email            String           @unique
+  emailVerified    DateTime?
+  image            String?
+  role             Role             @default(STUDENT)
+  departmentId     String?
+  department       Department?      @relation(fields: [departmentId], references: [id])
+  isOnLeave        Boolean          @default(false) // FR-13: instructor leave / auto-reply mode
+  accounts         Account[]
+  sessions         Session[]
+  queries          Query[]          @relation("StudentQueries")
+  assignedQueries  Query[]          @relation("AssignedQueries")
+  replies          Reply[]
+  auditLogs        AuditLog[]
+  notifications    Notification[]
+  announcements    Announcement[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Auth.js (NextAuth) adapter models
+// ---------------------------------------------------------------------------
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Queries — the heart of the system (FR-02, FR-03, FR-04, FR-05, FR-06, FR-07)
+// ---------------------------------------------------------------------------
+
+model Query {
+  id             String        @id @default(cuid())
+  ticketNumber   String        @unique @default(cuid())
+  subject        String
+  message        String        @db.Text
+  channel        QueryChannel  @default(WEB)
+  status         QueryStatus   @default(SUBMITTED)
+  priority       QueryPriority @default(NORMAL)
+  category       String? // e.g. "admissions", "exam", "fee", "course"
+  confidence     Float? // 0..1 classification confidence from the AI service
+  aiClassification Json? // raw structured output from the AI pipeline
+  aiDraftReply   String?       @db.Text // FR-05: AI-drafted reply for staff review
+  studentId      String?
+  student        User?         @relation("StudentQueries", fields: [studentId], references: [id], onDelete: SetNull)
+  assignedToId   String?
+  assignedTo     User?         @relation("AssignedQueries", fields: [assignedToId], references: [id], onDelete: SetNull)
+  departmentId   String?
+  department     Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  replies        Reply[]
+  escalatedAt    DateTime? // FR-07: when the 24h auto-escalation fired
+  resolvedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([studentId])
+  @@index([assignedToId])
+  @@index([departmentId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("queries")
+}
+
+model Reply {
+  id        String   @id @default(cuid())
+  queryId   String
+  query     Query    @relation(fields: [queryId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  body      String   @db.Text
+  isAiDraft Boolean  @default(false) // drafted by AI, awaiting staff approval
+  sentAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([queryId])
+  @@map("replies")
+}
+
+// ---------------------------------------------------------------------------
+// Announcements (FR-11), notifications (FR-08), audit log (FR-14)
+// ---------------------------------------------------------------------------
+
+model Announcement {
+  id         String   @id @default(cuid())
+  title      String
+  body       String   @db.Text
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  targetRole Role? // null = broadcast to everyone
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("announcements")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // e.g. "status_update", "assignment", "escalation", "announcement"
+  title     String
+  body      String?   @db.Text
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String // e.g. "status_update", "reassign", "escalate", "override", "reply_sent"
+  entityType String
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

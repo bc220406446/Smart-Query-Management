@@ -1,0 +1,182 @@
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  Font,
+  renderToBuffer,
+  StyleSheet,
+
+} from "@react-pdf/renderer";
+import type { Prisma } from "@prisma/client";
+
+Font.register({
+  family: "Inter",
+  src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLYNXjHNPa9hlvg.woff2",
+});
+
+const styles = StyleSheet.create({
+  page: {
+    padding: 40,
+    fontFamily: "Inter",
+    fontSize: 9,
+    color: "#1f2937",
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderBottomWidth: 2,
+    borderBottomColor: "#1e293b",
+    paddingBottom: 10,
+    marginBottom: 16,
+  },
+  title: { fontSize: 18, fontWeight: "bold", color: "#0f172a" },
+  subtitle: { fontSize: 9, color: "#6b7280", marginTop: 2 },
+  row: {
+    flexDirection: "row",
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  cell: { flex: 1, marginRight: 8 },
+  cellMono: { fontFamily: "Courier", fontSize: 8 },
+  small: { fontSize: 8, color: "#6b7280" },
+  tableHead: {
+    flexDirection: "row",
+    backgroundColor: "#1e293b",
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    marginBottom: 8,
+  },
+  tableHeadCell: { color: "#ffffff", fontWeight: "bold", flex: 1, marginRight: 8 },
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: "center",
+    backgroundColor: "#e2e8f0",
+    color: "#1e293b",
+    fontSize: 7,
+    fontWeight: "bold",
+  },
+});
+
+function statusColor(status?: string) {
+  switch (status) {
+    case "SUBMITTED":
+      return "#94a3b8";
+    case "CLASSIFYING":
+      return "#f59e0b";
+    case "ROUTED":
+      return "#0ea5e9";
+    case "IN_PROGRESS":
+      return "#6366f1";
+    case "RESOLVED":
+      return "#10b981";
+    case "ESCALATED":
+      return "#f43f5e";
+    case "CLOSED":
+      return "#64748b";
+    default:
+      return "#94a3b8";
+  }
+}
+
+interface QueryRow {
+  ticketNumber: string;
+  subject: string;
+  status: string;
+  priority: string;
+  category?: string | null;
+  channel: string;
+  student?: { name: string | null; email: string | null } | null;
+  assignedTo?: { name: string | null } | null;
+  department?: { name: string | null } | null;
+  createdAt: Date | string;
+  resolvedAt?: Date | string | null;
+}
+
+function PageHeader() {
+  return (
+    <View style={styles.header}>
+      <View>
+        <Text style={styles.title}>Smart Query Hub — Query Report</Text>
+        <Text style={styles.subtitle}>Generated {new Date().toLocaleString()}</Text>
+      </View>
+      <Text style={styles.subtitle}>Smart Query Routing &amp; Email Automation System — FYP</Text>
+    </View>
+  );
+}
+
+function TableHeader() {
+  return (
+    <View style={styles.tableHead}>
+      <Text style={[styles.tableHeadCell, styles.cellMono]}>Ticket</Text>
+      <Text style={[styles.tableHeadCell]}>Subject</Text>
+      <Text style={[styles.tableHeadCell]}>Student</Text>
+      <Text style={[styles.tableHeadCell]}>Department</Text>
+      <Text style={[styles.tableHeadCell, styles.cellMono]}>Status</Text>
+      <Text style={[styles.tableHeadCell, styles.cellMono]}>Priority</Text>
+      <Text style={[styles.tableHeadCell, styles.cellMono]}>Created</Text>
+    </View>
+  );
+}
+
+function QueryRowComponent({ row }: { row: QueryRow }) {
+  return (
+    <View style={styles.row}>
+      <Text style={[styles.cell, styles.cellMono]}>#{row.ticketNumber.slice(0, 8)}</Text>
+      <Text style={styles.cell}>{row.subject}</Text>
+      <Text style={styles.cell}>{row.student?.name ?? "—"}</Text>
+      <Text style={styles.cell}>{row.department?.name ?? "—"}</Text>
+      <View style={styles.cell}>
+        <View style={[styles.statusBadge, { backgroundColor: statusColor(row.status) + "22", borderColor: statusColor(row.status) }]}>
+          <Text style={{ color: statusColor(row.status), fontSize: 7, fontWeight: "bold", textTransform: "uppercase" }}>
+            {row.status}
+          </Text>
+        </View>
+      </View>
+      <Text style={[styles.cell, styles.cellMono]}>{row.priority}</Text>
+      <Text style={[styles.cell, styles.cellMono, styles.small]}>
+        {new Date(row.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+      </Text>
+    </View>
+  );
+}
+
+export function QueryDocument({ queries }: { queries: Prisma.QueryGetPayload<{ include: { student: { select: { name: true; email: true } }; assignedTo: { select: { name: true } }; department: { select: { name: true } } } }>[] }) {
+  return (
+    <Document>
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        <PageHeader />
+        <TableHeader />
+        {queries.map((q) => (
+          <QueryRowComponent
+            key={q.id}
+            row={{
+              ticketNumber: q.ticketNumber,
+              subject: q.subject,
+              status: q.status,
+              priority: q.priority,
+              category: q.category ?? null,
+              channel: q.channel,
+              student: q.student,
+              assignedTo: q.assignedTo,
+              department: q.department,
+              createdAt: q.createdAt,
+              resolvedAt: q.resolvedAt,
+            }}
+          />
+        ))}
+        {queries.length === 0 && (
+          <Text style={{ color: "#6b7280", marginTop: 20 }}>No queries found.</Text>
+        )}
+      </Page>
+    </Document>
+  );
+}
+
+export async function pdfDocument(queries: Prisma.QueryGetPayload<{ include: { student: { select: { name: true; email: true } }; assignedTo: { select: { name: true } }; department: { select: { name: true } } } }>[]): Promise<Uint8Array> {
+  const doc = <QueryDocument queries={queries} />;
+  return renderToBuffer(doc);
+}

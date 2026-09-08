@@ -1,0 +1,270 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Neumorphism UI theme — soft extrusive + intrusive shadows,
+   low-contrast pastel surfaces, rounded & pressed controls.
+   ============================================================ */
+:root {
+  --bg: #e2e6ef;
+  --surface: #e2e6ef;
+  --surface-raised: #ebeff5;
+  --surface-pressed: #d6dae3;
+  --shadow-light: #ffffff;
+  --shadow-dark: #a4abb8;
+  --foreground: #3c4257;
+  --foreground-soft: #656e85;
+  --accent: #8cafdf;
+  --accent-pressed: #6f97c1;
+  --danger: #d18b8b;
+  --success: #8fb89b;
+  --warning: #d9c28a;
+  --radius: 20px;
+  --radius-sm: 12px;
+  --radius-xs: 8px;
+
+  --shadow-soft: 8px 8px 14px var(--shadow-dark), -8px -8px 14px var(--shadow-light);
+  --shadow-soft-pressed: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+  --shadow-soft-sm: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+  --shadow-soft-xs: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
+  --shadow-glow: 0 0 0 2px var(--accent);
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --------------------------------------------------
+   Neumorphic primitives
+   -------------------------------------------------- */
+.neu {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  transition: box-shadow 0.25s ease, transform 0.2s ease;
+}
+
+.neu-raised {
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-soft);
+}
+
+.neu-pressed {
+  background: var(--surface-pressed);
+  box-shadow: var(--shadow-soft-xs);
+}
+
+.neu-sm {
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft-sm);
+}
+
+.neu-xs {
+  border-radius: var(--radius-xs);
+  box-shadow: var(--shadow-soft-sm);
+}
+
+/* pressed (inset) form inputs — the default text input style */
+.neu-input {
+  background: var(--surface-pressed);
+  border: none;
+  border-radius: var(--radius-xs);
+  box-shadow: var(--shadow-soft-xs);
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  color: var(--foreground);
+  outline: none;
+  transition: box-shadow 0.2s ease, --shadow-glow 0.2s ease;
+}
+
+.neu-input:focus {
+  box-shadow: var(--shadow-soft-xs), var(--shadow-glow);
+}
+
+.neu-input::placeholder {
+  color: var(--foreground-soft);
+  opacity: 0.7;
+}
+
+textarea.neu-input {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.5;
+}
+
+/* Neumorphic button — relaxes (pops up) on hover by inverting the shadow offset */
+.neu-btn {
+  background: var(--surface);
+  border: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft-sm);
+  padding: 11px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.15s ease, background 0.2s ease;
+  user-select: none;
+}
+
+.neu-btn:hover {
+  box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+  transform: translateY(-1px);
+}
+
+.neu-btn:active {
+  box-shadow: var(--shadow-soft-xs);
+  transform: translateY(0);
+  background: var(--surface-pressed);
+}
+
+.neu-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: var(--shadow-soft-sm);
+}
+
+/* accent button — same neumorphic shape, tinted */
+.neu-btn-accent {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow-soft-sm);
+}
+
+.neu-btn-accent:hover {
+  box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+  background: var(--accent-pressed);
+}
+
+.neu-btn-accent:active {
+  box-shadow: var(--shadow-soft-xs);
+  background: var(--accent-pressed);
+}
+
+/* pill badge — pressed chip */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface-pressed);
+  box-shadow: var(--shadow-soft-xs);
+  color: var(--foreground-soft);
+}
+
+.chip-success {
+  background: #cddcd1;
+  color: #2f5a3a;
+}
+
+.chip-warning {
+  background: #ecdcb8;
+  color: #7a5e23;
+}
+
+.chip-danger {
+  background: #ecbbb2;
+  color: #8a3b3b;
+}
+
+.chip-info {
+  background: #c2dcef;
+  color: #2a5779;
+}
+
+/* card caption + subtle divider */
+.caption {
+  font-size: 0.75rem;
+  color: var(--foreground-soft);
+}
+
+.divider {
+  background: var(--shadow-dark);
+  height: 1px;
+  opacity: 0.18;
+}
+
+/* --------------------------------------------------
+   Transitions & page entrance
+   -------------------------------------------------- */
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-soft {
+  0% {
+    box-shadow: var(--shadow-soft-sm);
+  }
+  50% {
+    box-shadow: 4px 4px 10px var(--shadow-dark), -4px -4px 10px var(--shadow-light);
+  }
+  100% {
+    box-shadow: var(--shadow-soft-sm);
+  }
+}
+
+.animate-in {
+  animation: fadeSlideUp 0.35s ease both;
+}
+
+.animate-in-delay-1 {
+  animation-delay: 0.07s;
+}
+
+.animate-in-delay-2 {
+  animation-delay: 0.14s;
+}
+
+.animate-in-delay-3 {
+  animation-delay: 0.21s;
+}
+
+.pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+/* Keep Recharts readable on the softer palette */
+.recharts-default-tooltip {
+  background: var(--surface-raised) !important;
+  border: 1px solid var(--shadow-dark) !important;
+  border-radius: var(--radius-xs);
+  color: var(--foreground) !important;
+}
+
+/* Accessible focus ring for keyboard users (still neumorphic) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

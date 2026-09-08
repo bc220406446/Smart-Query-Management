@@ -1,0 +1,1 @@
+"""AI pipeline: classification (FR-03), routing (FR-04), drafting (FR-05)."""

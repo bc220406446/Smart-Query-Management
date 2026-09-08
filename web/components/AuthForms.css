@@ -1,0 +1,86 @@
+@layer components {
+  .auth-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-soft);
+    padding: 32px 28px;
+    max-width: 440px;
+    width: 100%;
+  }
+
+  .auth-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--foreground);
+    margin: 0 0 4px;
+    text-align: center;
+  }
+
+  .auth-sub {
+    color: var(--foreground-soft);
+    text-align: center;
+    margin: 0 0 24px;
+    font-size: 0.92rem;
+  }
+
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--foreground-soft);
+    font-size: 0.82rem;
+    margin: 22px 0;
+  }
+  .auth-divider::before,
+  .auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--shadow-dark);
+    opacity: 0.25;
+  }
+
+  .otp-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 6px;
+  }
+  .otp-chip {
+    background: var(--surface-pressed);
+    box-shadow: var(--shadow-soft-xs);
+    border: none;
+    border-radius: var(--radius-xs);
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--foreground);
+    text-align: center;
+    outline: none;
+    transition: box-shadow 0.15s ease, transform 0.1s ease;
+  }
+  .otp-chip:focus {
+    box-shadow: var(--shadow-soft-xs), var(--shadow-glow);
+  }
+  .otp-chip:active {
+    box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
+  }
+
+  .resend-link {
+    color: var(--foreground-soft);
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 10px;
+  }
+  .resend-link button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: inherit;
+    text-decoration: underline;
+    padding: 0;
+  }
+}

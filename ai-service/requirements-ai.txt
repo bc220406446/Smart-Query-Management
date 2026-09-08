@@ -1,0 +1,10 @@
+# OPTIONAL: install only when you have API keys and want LLM-powered
+# classification/drafting (FR-03/FR-05):  pip install -r requirements-ai.txt
+-r requirements.txt
+
+langchain>=0.3
+langchain-core>=0.3
+langchain-google-genai>=2.0
+google-genai>=1.5
+langchain-anthropic>=0.3
+anthropic>=0.49
