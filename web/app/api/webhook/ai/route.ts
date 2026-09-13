@@ -90,4 +90,5 @@ export async function POST(request: Request) {
  * writing them directly.
  *
  * Either path ends up on the same rows, so UI behavior is identical.
+ * Keep this in sync with the AI service's webhook config if you enable it.
  */

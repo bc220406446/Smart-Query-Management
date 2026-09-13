@@ -12,58 +12,91 @@ export default async function NewQueryPage({
   const { error } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-white">Submit a Query</h1>
-      <p className="mt-1 text-sm text-slate-400">
-        Your query is classified by AI, routed to the right department, and you&apos;ll be
-        notified as it moves toward resolution.
-      </p>
+    <main className="container-page">
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Submit a Query</h1>
+          <p className="page-subtitle">
+            Your query is classified by AI, routed to the right department, and you
+            will be notified as it moves toward resolution.
+          </p>
+        </div>
+      </div>
 
       {error && (
-        <p className="mt-4 rounded-lg border border-rose-800 bg-rose-950/40 px-4 py-3 text-sm text-rose-300">
+        <div className="error-box" style={{ marginBottom: 20 }}>
           {error}
-        </p>
+        </div>
       )}
 
-      <form action={submitQuery} className="mt-6 space-y-5">
-        <div>
-          <label htmlFor="subject" className="block text-sm font-medium text-slate-300">
-            Subject
-          </label>
-          <input
-            id="subject"
-            name="subject"
-            type="text"
-            required
-            minLength={5}
-            maxLength={200}
-            placeholder="e.g. How do I register for CS302?"
-            className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
-          />
+      <form action={submitQuery} className="grid-2" style={{ marginTop: 8 }}>
+        <div style={{ flex: 2 }}>
+          <div className="field" style={{ marginBottom: 16 }}>
+            <label htmlFor="subject" className="field-label">
+              Subject
+            </label>
+            <input
+              id="subject"
+              name="subject"
+              type="text"
+              required
+              minLength={5}
+              maxLength={200}
+              placeholder="e.g. How do I register for CS302?"
+              className="field-input"
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="message" className="field-label">
+              Details
+            </label>
+            <textarea
+              id="message"
+              name="message"
+              required
+              minLength={20}
+              maxLength={5000}
+              rows={10}
+              placeholder="Describe your query in detail — the more context, the better the AI routing."
+              className="field-textarea"
+            />
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="message" className="block text-sm font-medium text-slate-300">
-            Details
-          </label>
-          <textarea
-            id="message"
-            name="message"
-            required
-            minLength={20}
-            maxLength={5000}
-            rows={8}
-            placeholder="Describe your query in detail — the more context, the better the AI routing."
-            className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
+        <div
+          style={{
+            alignSelf: "flex-start",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
         >
-          Submit query
-        </button>
+          <div className="card" style={{ padding: "16px 20px" }}>
+            <p className="field-label" style={{ marginBottom: 4 }}>
+              What happens next
+            </p>
+            <ul
+              style={{
+                margin: 0,
+                padding: 0,
+                listStyle: "none",
+                fontSize: 13,
+                color: "var(--text-secondary)",
+                lineHeight: 1.7,
+              }}
+            >
+              <li>AI classifies intent and urgency</li>
+              <li>Query is routed to the right department</li>
+              <li>You get notified at each stage</li>
+              <li>Staff can send AI-drafted replies</li>
+            </ul>
+          </div>
+
+          <button type="submit" className="btn btn-primary btn-lg">
+            Submit query
+          </button>
+        </div>
       </form>
     </main>
   );

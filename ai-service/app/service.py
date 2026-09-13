@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import AuditLog, Notification, Query, QueryStatus
+from app.models import AuditLog, Notification, Query, QueryChannel, QueryStatus
 from app.pipeline.classifier import classify_text
 from app.pipeline.drafts import draft_reply
 from app.pipeline.router import route_query
@@ -161,7 +161,11 @@ def _notify_webhook(query_id: str) -> None:
     """Optional: POST the result back to the Next.js webhook (FR-03/04/05)."""
     if not settings.ai_webhook_url or not settings.ai_webhook_secret:
         return
-    import httpx
+    try:
+        import httpx
+    except ImportError:
+        logger.warning("Webhook notification skipped: httpx not installed")
+        return
 
     try:
         httpx.post(
@@ -203,10 +207,10 @@ def ingest_email_query(db: Session, subject: str, snippet: str, sender: str, thr
     FR-02: Gmail API poller calls this for each new unread message. The AI
     pipeline then classifies/routes/drafts just like a web submission.
     """
+    from app.models import new_id
+
     now = received_at or datetime.now(timezone.utc)
     row = _build_query_from_email(subject, snippet, sender, thread_id, now)
-
-    from app.models import Query, QueryChannel, QueryStatus
 
     query = Query(
         id=new_id(),
@@ -242,21 +246,18 @@ def gmail_poll_for_emails(db: Session, label: str = "INBOX", max_messages: int =
     Uses a lightweight header-only fetch by default; full-body fetching is
     added when the message needs classification context.
     """
-    import base64
-
     creds_json = getattr(settings, "gmail_credentials_json", None) or ""
     if not creds_json:
         logger.debug("Gmail poller skipped: GMAIL_CREDENTIALS_JSON not set")
         return []
 
     try:
-        from google import genai as google_genai  # reuse google-auth / genai for auth
+        from google import genai as _google_genai  # reuse google-auth / genai for auth
     except ImportError:
         logger.warning("Gmail poller skipped: google-genai missing; install requirements-ai.txt")
         return []
 
     try:
-        import google.auth.transport.requests
         from google.oauth2 import service_account  # type: ignore
     except ImportError:
         logger.warning("Gmail poller skipped: google-auth missing")
@@ -270,7 +271,10 @@ def gmail_poll_for_emails(db: Session, label: str = "INBOX", max_messages: int =
         # dependencies) — in production, authenticate with a service account or
         # OAuth2 refresh token scoped to https://www.googleapis.com/auth/gmail.readonly
         # For this stub we document the shape and return empty until credentials are wired.
-        logger.info("Gmail poller invoked (max_messages=%d). Wire GMAIL_CREDENTIALS_JSON to enable.", max_messages)
+        logger.info(
+            "Gmail poller invoked (max_messages=%d). Wire GMAIL_CREDENTIALS_JSON to enable.",
+            max_messages,
+        )
     except Exception as exc:  # noqa: BLE001
         logger.warning("Gmail poller error: %s", exc)
 

@@ -17,54 +17,133 @@ import {
 } from "recharts";
 
 const STATUS_COLORS: Record<string, string> = {
-  SUBMITTED: "#94a3b8",
-  CLASSIFYING: "#f59e0b",
-  ROUTED: "#0ea5e9",
-  IN_PROGRESS: "#6366f1",
-  RESOLVED: "#10b981",
-  ESCALATED: "#f43f5e",
-  CLOSED: "#64748b",
+  SUBMITTED: "var(--text-tertiary)",
+  CLASSIFYING: "var(--warning)",
+  ROUTED: "var(--info)",
+  IN_PROGRESS: "var(--brand-500)",
+  RESOLVED: "var(--success)",
+  ESCALATED: "var(--danger)",
+  CLOSED: "var(--text-tertiary)",
 };
+
+function hexVar(name: string): string {
+  if (name === "var(--text-tertiary)") return "#8a93a3";
+  if (name === "var(--warning)") return "#b06a00";
+  if (name === "var(--info)") return "#2557d6";
+  if (name === "var(--brand-500)") return "#3b6ef0";
+  if (name === "var(--success)") return "#1a7f4a";
+  if (name === "var(--danger)") return "#c53030";
+  return "#64748b";
+}
 
 export function StatusPie({ data }: { data: Array<{ name: string; value: number }> }) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <PieChart>
-        <Pie data={data} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} paddingAngle={2}>
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          innerRadius={60}
+          outerRadius={100}
+          paddingAngle={2}
+        >
           {data.map((entry) => (
-            <Cell key={entry.name} fill={STATUS_COLORS[entry.name] ?? "#64748b"} />
+            <Cell
+              key={entry.name}
+              fill={hexVar(STATUS_COLORS[entry.name] ?? "#64748b")}
+            />
           ))}
         </Pie>
-        <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8 }} />
+        <Tooltip
+          contentStyle={{
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            color: "var(--text-primary)",
+            fontSize: 12,
+            fontFamily: "inherit",
+          }}
+        />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
   );
 }
 
-export function DeptBar({ data }: { data: Array<{ name: string; count: number }> }) {
+export function DeptBar({
+  data,
+}: {
+  data: Array<{ name: string; count: number }>;
+}) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <BarChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-        <XAxis dataKey="name" tick={{ fill: "#94a3b8", fontSize: 12 }} />
-        <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} allowDecimals={false} />
-        <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8 }} />
-        <Bar dataKey="count" name="Queries" fill="#6366f1" radius={[4, 4, 0, 0]} />
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="var(--border-light)"
+        />
+        <XAxis dataKey="name" tick={{ fill: "var(--text-tertiary)", fontSize: 11 }} />
+        <YAxis
+          tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
+          allowDecimals={false}
+        />
+        <Tooltip
+          contentStyle={{
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            color: "var(--text-primary)",
+            fontSize: 12,
+            fontFamily: "inherit",
+          }}
+        />
+        <Bar
+          dataKey="count"
+          name="Queries"
+          fill="var(--brand-500)"
+          radius={[4, 4, 0, 0]}
+        />
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
-export function VolumeLine({ data }: { data: Array<{ date: string; count: number }> }) {
+export function VolumeLine({
+  data,
+}: {
+  data: Array<{ date: string; count: number }>;
+}) {
   return (
     <ResponsiveContainer width="100%" height={280}>
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-        <XAxis dataKey="date" tick={{ fill: "#94a3b8", fontSize: 12 }} />
-        <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} allowDecimals={false} />
-        <Tooltip contentStyle={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 8 }} />
-        <Line type="monotone" dataKey="count" name="Queries" stroke="#10b981" strokeWidth={2} dot={false} />
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke="var(--border-light)"
+        />
+        <XAxis dataKey="date" tick={{ fill: "var(--text-tertiary)", fontSize: 11 }} />
+        <YAxis
+          tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
+          allowDecimals={false}
+        />
+        <Tooltip
+          contentStyle={{
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--border-default)",
+            borderRadius: 8,
+            color: "var(--text-primary)",
+            fontSize: 12,
+            fontFamily: "inherit",
+          }}
+        />
+        <Line
+          type="monotone"
+          dataKey="count"
+          name="Queries"
+          stroke="var(--success)"
+          strokeWidth={2}
+          dot={false}
+        />
       </LineChart>
     </ResponsiveContainer>
   );

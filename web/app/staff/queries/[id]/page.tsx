@@ -32,93 +32,228 @@ export default async function StaffQueryDetailPage({
   const resolved = query.status === "RESOLVED" || query.status === "CLOSED";
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <p className="font-mono text-xs text-slate-500">Ticket #{query.ticketNumber.slice(0, 8)}</p>
-      <div className="mt-1 flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-white">{query.subject}</h1>
+    <main className="container-page" style={{ maxWidth: 880 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 8,
+        }}
+      >
+        <span className="mono-sm">Ticket #{query.ticketNumber.slice(0, 8)}</span>
         <StatusBadge status={query.status} />
         <PriorityBadge priority={query.priority} />
       </div>
 
-      <p className="mt-1 text-xs text-slate-500">
-        From {query.student?.name ?? "Anonymous"} ({query.student?.email ?? "no email"}) · {query.department?.name ?? "Unassigned"} ·{" "}
-        {query.channel} channel · submitted {new Date(query.createdAt).toLocaleString()}
-      </p>
+      <h1
+        style={{
+          fontSize: 24,
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          margin: "0 0 6px",
+          letterSpacing: "-0.01em",
+        }}
+      >
+        {query.subject}
+      </h1>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          fontSize: 12,
+          color: "var(--text-tertiary)",
+          marginBottom: 20,
+          flexWrap: "wrap",
+        }}
+      >
+        <span>
+          From {query.student?.name ?? "Anonymous"} (
+          {query.student?.email ?? "no email"})
+        </span>
+        <span>{query.department?.name ?? "Unassigned"}</span>
+        <span>{query.channel} channel</span>
+        <span>Submitted {new Date(query.createdAt).toLocaleString()}</span>
+      </div>
 
       {error && (
-        <p className="mt-3 rounded-lg border border-rose-800 bg-rose-950/40 px-4 py-3 text-sm text-rose-300">
+        <div className="error-box" style={{ marginBottom: 16 }}>
           {error}
-        </p>
+        </div>
       )}
 
       {query.category && (
-        <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">
-          {query.category} {query.confidence != null && `· ${(query.confidence * 100).toFixed(0)}% confidence`}
-        </p>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 16,
+            padding: "4px 12px",
+            background: "var(--bg-sunken)",
+            border: "1px solid var(--border-light)",
+            borderRadius: "var(--radius-full)",
+            fontSize: 11,
+            fontWeight: 600,
+            color: "var(--text-secondary)",
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+          }}
+        >
+          {query.category}
+          {query.confidence != null && (
+            <span style={{ color: "var(--text-tertiary)" }}>
+              ·
+              {(query.confidence * 100).toFixed(0)}% confidence
+            </span>
+          )}
+        </div>
       )}
 
-      <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900 p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Student message</h2>
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">{query.message}</p>
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="card-header">
+          <span className="card-title">Student message</span>
+        </div>
+        <p
+          style={{
+            whiteSpace: "pre-wrap",
+            fontSize: 14,
+            lineHeight: 1.6,
+            color: "var(--text-primary)",
+          }}
+        >
+          {query.message}
+        </p>
       </div>
 
       {query.aiDraftReply && !resolved && (
-        <div className="mt-5 rounded-xl border border-amber-700/60 bg-amber-950/20 p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-amber-400">
+        <div
+          className="card"
+          style={{
+            borderColor: "var(--warning-border)",
+            borderWidth: 1,
+            background: "var(--warning-bg)",
+            marginBottom: 20,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 8,
+            }}
+          >
+            <span
+              className="section-label"
+              style={{ color: "var(--warning)", textTransform: "uppercase" }}
+            >
               ✨ AI-drafted reply (FR-05)
-            </h2>
+            </span>
             <form action={approveAiDraft.bind(null, query.id)}>
               <button
                 type="submit"
-                className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-500"
+                className="btn btn-primary btn-sm"
+                style={{ background: "var(--warning)", borderColor: "var(--warning)" }}
               >
                 Approve &amp; send
               </button>
             </form>
           </div>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-amber-100/90">
+          <p
+            style={{
+              whiteSpace: "pre-wrap",
+              fontSize: 14,
+              lineHeight: 1.6,
+              color: "var(--text-primary)",
+            }}
+          >
             {query.aiDraftReply}
           </p>
         </div>
       )}
 
-      <h2 className="mt-8 text-sm font-semibold text-slate-300">Replies</h2>
-      <div className="mt-3 space-y-3">
-        {query.replies.length === 0 && (
-          <p className="rounded-xl border border-dashed border-slate-800 p-5 text-center text-sm text-slate-500">
-            No replies yet.
-          </p>
-        )}
-        {query.replies.map((r) => (
-          <div key={r.id} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-            <div className="flex items-center justify-between text-xs text-slate-500">
-              <span className="font-medium text-slate-300">{r.author?.name ?? "System"}</span>
-              <span>{new Date(r.createdAt).toLocaleString()}</span>
-            </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-200">{r.body}</p>
+      <h3
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          marginBottom: 12,
+        }}
+      >
+        Replies
+      </h3>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {query.replies.length === 0 ? (
+          <div className="card" style={{ textAlign: "center", padding: "28px 16px" }}>
+            <p style={{ color: "var(--text-tertiary)", fontSize: 13 }}>
+              No replies yet.
+            </p>
           </div>
-        ))}
+        ) : (
+          query.replies.map((r) => (
+            <div key={r.id} className="card">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  fontSize: 11,
+                  marginBottom: 8,
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  {r.author?.name ?? "System"}
+                </span>
+                <span className="mono-sm">
+                  {new Date(r.createdAt).toLocaleString()}
+                </span>
+              </div>
+              <p
+                style={{
+                  whiteSpace: "pre-wrap",
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  color: "var(--text-primary)",
+                }}
+              >
+                {r.body}
+              </p>
+            </div>
+          ))
+        )}
       </div>
 
       {!resolved && (
-        <form action={sendReply.bind(null, query.id)} className="mt-8">
-          <label htmlFor="body" className="block text-sm font-medium text-slate-300">
-            Write a reply
-          </label>
-          <textarea
-            id="body"
-            name="body"
-            required
-            minLength={1}
-            rows={5}
-            className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-900 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
-            placeholder="Sending a reply marks the query as resolved."
-          />
-          <button
-            type="submit"
-            className="mt-3 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
-          >
+        <form
+          action={sendReply.bind(null, query.id)}
+          style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}
+        >
+          <div className="field">
+            <label htmlFor="body" className="field-label">
+              Write a reply
+            </label>
+            <textarea
+              id="body"
+              name="body"
+              required
+              minLength={1}
+              rows={6}
+              className="field-textarea"
+              placeholder="Sending a reply marks the query as resolved."
+            />
+          </div>
+          <button type="submit" className="btn btn-primary btn-lg">
             Send reply
           </button>
         </form>

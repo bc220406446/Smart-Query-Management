@@ -58,11 +58,14 @@ def test_escalate_endpoint(client, db_session):
         updated_at=datetime.now(timezone.utc) - timedelta(hours=50),
     )
 
-    from app.config import settings
+    import app.config as config_mod
 
-    settings.escalation_hours = 0
-    res = client.post("/queries/escalate")
-    settings.escalation_hours = 24
+    saved = config_mod.settings.escalation_hours
+    config_mod.settings.escalation_hours = 0
+    try:
+        res = client.post("/queries/escalate")
+    finally:
+        config_mod.settings.escalation_hours = saved
 
     assert res.status_code == 200
     assert res.json()["count"] == 1

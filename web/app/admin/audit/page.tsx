@@ -13,25 +13,56 @@ export default async function AuditLogPage() {
   });
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-white">Audit Log</h1>
-      <p className="mt-1 text-sm text-slate-400">FR-14 — every state change, reassignment, and override.</p>
+    <main className="container-page" style={{ maxWidth: 840 }}>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Audit Log</h1>
+          <p className="page-subtitle">FR-14 — every state change, reassignment, and override.</p>
+        </div>
+      </div>
 
-      <div className="mt-6 overflow-hidden rounded-xl border border-slate-800">
+      <div className="table-wrap">
         {logs.length === 0 ? (
-          <p className="bg-slate-900 p-8 text-center text-sm text-slate-500">No activity recorded yet.</p>
+          <div className="empty-state">
+            <span className="empty-state-icon">📝</span>
+            No activity recorded yet.
+          </div>
         ) : (
-          <ul className="divide-y divide-slate-800">
+          <ul style={{ listStyle: "none", margin: 0, padding: "6px 0" }}>
             {logs.map((log) => (
-              <li key={log.id} className="flex items-start justify-between gap-4 bg-slate-900/60 px-4 py-3">
-                <div>
-                  <p className="text-sm font-medium text-slate-200">{log.action.replace("_", " ")}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">
+              <li
+                key={log.id}
+                className="card"
+                style={{
+                  padding: "12px 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  borderColor: "var(--border-light)",
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p
+                    style={{
+                      fontWeight: 500,
+                      color: "var(--text-primary)",
+                      textTransform: "uppercase",
+                      fontSize: 11,
+                      letterSpacing: "0.04em",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {log.action.replace("_", " ")}
+                  </p>
+                  <p className="mono-sm" style={{ lineHeight: 1.5 }}>
                     {log.actor?.name ?? "System"} · {log.entityType}
                     {log.entityId ? ` #${log.entityId.slice(0, 8)}` : ""}
                   </p>
                 </div>
-                <p className="shrink-0 text-xs text-slate-600">{new Date(log.createdAt).toLocaleString()}</p>
+                <span className="mono-sm">
+                  {new Date(log.createdAt).toLocaleString()}
+                </span>
               </li>
             ))}
           </ul>

@@ -1,14 +1,20 @@
 from datetime import datetime, timezone
 
 from app.service import gmail_poll_for_emails, ingest_email_query
-from app.models import Query, QueryChannel, QueryStatus
+from app.models import AuditLog, Query, QueryChannel, QueryStatus
 
 
-def test_gmail_poll_without_credentials_is_noop(db_session, settings):
+def test_gmail_poll_without_credentials_is_noop(db_session, settings_with_gmail):
     """When GMAIL_CREDENTIALS_JSON is empty the poller returns an empty list."""
-    settings.gmail_credentials_json = ""
-    ingested = gmail_poll_for_emails(db_session)
-    assert ingested == []
+    import app.config as config_mod
+
+    saved = config_mod.settings.gmail_credentials_json
+    config_mod.settings.gmail_credentials_json = ""
+    try:
+        ingested = gmail_poll_for_emails(db_session)
+        assert ingested == []
+    finally:
+        config_mod.settings.gmail_credentials_json = saved
 
 
 def test_gmail_poll_with_credentials_is_noop_without_genai(
@@ -39,16 +45,17 @@ def test_ingest_email_query_creates_submitted_row(db_session):
         thread_id="gmail-thread-123",
         received_at=received_at,
     )
+    db_session.commit()
 
-    query = db_session.scalar(Query.__table__.select().where(Query.id == query_id))
-    assert query is not None
+    query = db_session.query(Query).filter_by(id=query_id).one()
     assert query.subject == "Result card not received"
     assert query.message == "My result card for Fall 2023 has not been delivered yet."
     assert query.channel == QueryChannel.EMAIL
     assert query.status == QueryStatus.SUBMITTED
     assert query.student_id is None
-    assert query.created_at == received_at
-    assert query.updated_at == received_at
+    # SQLite has no timezone support; strip tzinfo for comparison.
+    assert query.created_at.replace(tzinfo=None) == received_at.replace(tzinfo=None)
+    assert query.updated_at.replace(tzinfo=None) == received_at.replace(tzinfo=None)
 
 
 def test_ingest_email_query_defaults_received_at_to_now(db_session):
@@ -61,10 +68,11 @@ def test_ingest_email_query_defaults_received_at_to_now(db_session):
         sender="s@student.edu.pk",
         thread_id="t-2",
     )
+    db_session.commit()
     after = datetime.now(timezone.utc)
 
-    query = db_session.scalar(Query.__table__.select().where(Query.id == query_id))
-    assert before <= query.created_at <= after
+    query = db_session.query(Query).filter_by(id=query_id).one()
+    assert before.replace(tzinfo=None) <= query.created_at <= after.replace(tzinfo=None)
     assert query.updated_at == query.created_at
 
 
@@ -77,12 +85,9 @@ def test_ingest_email_query_emits_audit_entry(db_session):
         sender="a@vu.edu.pk",
         thread_id="t-3",
     )
-    from app.models import AuditLog
+    db_session.commit()
 
-    audit = db_session.scalar(
-        AuditLog.__table__.select().where(AuditLog.entity_id == query_id)
-    )
-    assert audit is not None
+    audit = db_session.query(AuditLog).filter_by(entity_id=query_id).one()
     assert audit.action == "email_ingested"
     assert audit.entity_type == "query"
     assert audit.meta["sender"] == "a@vu.edu.pk"
@@ -99,7 +104,8 @@ def test_ingest_email_query_does_not_resolve_student_id(db_session):
         sender="x@student.edu.pk",
         thread_id="t-4",
     )
-    query = db_session.scalar(Query.__table__.select().where(Query.id == query_id))
+    db_session.commit()
+    query = db_session.query(Query).filter_by(id=query_id).one()
     assert query.student_id is None
 
 
@@ -109,5 +115,5 @@ def test_multiple_email_ingest_creates_unique_rows(db_session):
         for n in range(3)
     }
     assert len(ids) == 3
-    count = db_session.scalar(Query.__table__.select().count())  # noqa: WPS428
+    count = db_session.query(Query).count()
     assert count == 3

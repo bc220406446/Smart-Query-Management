@@ -21,50 +21,69 @@ export default async function StaffInboxPage() {
   });
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-white">Inbox</h1>
-      <p className="mt-1 text-sm text-slate-400">
-        Queries routed to you, plus escalated ones awaiting attention.
-      </p>
-
-      <div className="mt-6 overflow-hidden rounded-xl border border-slate-800">
-        {queries.length === 0 ? (
-          <p className="bg-slate-900 p-8 text-center text-sm text-slate-500">
-            No queries assigned to you right now.
+    <main className="container-page">
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Inbox</h1>
+          <p className="page-subtitle">
+            Queries routed to you, plus escalated ones awaiting attention.
           </p>
+        </div>
+      </div>
+
+      <div className="table-wrap">
+        {queries.length === 0 ? (
+          <div className="empty-state">
+            <span className="empty-state-icon">✅</span>
+            No queries assigned to you right now.
+          </div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-900 text-xs uppercase tracking-wide text-slate-500">
+          <table className="table table-stripe">
+            <thead>
               <tr>
-                <th className="px-4 py-3 font-medium">Subject</th>
-                <th className="px-4 py-3 font-medium">Student</th>
-                <th className="px-4 py-3 font-medium">Department</th>
-                <th className="px-4 py-3 font-medium">Priority</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Submitted</th>
+                <th>Subject</th>
+                <th>Student</th>
+                <th>Department</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Submitted</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-900/50">
+            <tbody>
               {queries.map((q) => (
-                <tr key={q.id} className="transition hover:bg-slate-800/60">
-                  <td className="px-4 py-3">
+                <tr key={q.id}>
+                  <td>
                     <Link
                       href={`/staff/queries/${q.id}`}
-                      className="font-medium text-slate-100 hover:text-indigo-300"
+                      className="table-link"
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
                       {q.subject}
                       {q.aiDraftReply && (
-                        <span className="ml-2 rounded bg-amber-950 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400">
+                        <span
+                          className="badge badge-warning"
+                          style={{ fontSize: 10, padding: "2px 7px" }}
+                        >
                           AI draft
                         </span>
                       )}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-slate-400">{q.student?.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-400">{q.department?.name ?? "—"}</td>
-                  <td className="px-4 py-3"><PriorityBadge priority={q.priority} /></td>
-                  <td className="px-4 py-3"><StatusBadge status={q.status} /></td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{new Date(q.createdAt).toLocaleDateString()}</td>
+                  <td style={{ color: "var(--text-secondary)" }}>
+                    {q.student?.name ?? "—"}
+                  </td>
+                  <td style={{ color: "var(--text-secondary)" }}>
+                    {q.department?.name ?? "—"}
+                  </td>
+                  <td>
+                    <PriorityBadge priority={q.priority} />
+                  </td>
+                  <td>
+                    <StatusBadge status={q.status} />
+                  </td>
+                  <td className="mono-sm">
+                    {new Date(q.createdAt).toLocaleDateString()}
+                  </td>
                 </tr>
               ))}
             </tbody>

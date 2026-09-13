@@ -6,7 +6,6 @@ import {
   Font,
   renderToBuffer,
   StyleSheet,
-
 } from "@react-pdf/renderer";
 import type { Prisma } from "@prisma/client";
 
@@ -17,45 +16,48 @@ Font.register({
 
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
+    padding: 36,
     fontFamily: "Inter",
     fontSize: 9,
-    color: "#1f2937",
+    color: "#1a1d23",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-end",
     borderBottomWidth: 2,
-    borderBottomColor: "#1e293b",
+    borderBottomColor: "#161B22",
     paddingBottom: 10,
     marginBottom: 16,
   },
-  title: { fontSize: 18, fontWeight: "bold", color: "#0f172a" },
+  title: { fontSize: 18, fontWeight: "bold", color: "#1a1d23" },
   subtitle: { fontSize: 9, color: "#6b7280", marginTop: 2 },
   row: {
     flexDirection: "row",
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderBottomWidth: 1,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: "#D3D7DE",
   },
   cell: { flex: 1, marginRight: 8 },
   cellMono: { fontFamily: "Courier", fontSize: 8 },
   small: { fontSize: 8, color: "#6b7280" },
   tableHead: {
     flexDirection: "row",
-    backgroundColor: "#1e293b",
-    paddingVertical: 6,
+    backgroundColor: "#161B22",
+    paddingVertical: 7,
     paddingHorizontal: 6,
     marginBottom: 8,
   },
-  tableHeadCell: { color: "#ffffff", fontWeight: "bold", flex: 1, marginRight: 8 },
+  tableHeadCell: { color: "#FFFFFF", fontWeight: "bold", flex: 1, marginRight: 8 },
   statusBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
     alignSelf: "center",
-    backgroundColor: "#e2e8f0",
-    color: "#1e293b",
+    backgroundColor: "#EEF3FF",
+    borderColor: "#BCD3FF",
+    borderWidth: 1,
+    color: "#2A4FD9",
     fontSize: 7,
     fontWeight: "bold",
   },
@@ -64,21 +66,21 @@ const styles = StyleSheet.create({
 function statusColor(status?: string) {
   switch (status) {
     case "SUBMITTED":
-      return "#94a3b8";
+      return "#8A93A3";
     case "CLASSIFYING":
-      return "#f59e0b";
+      return "#B06A00";
     case "ROUTED":
-      return "#0ea5e9";
+      return "#2557D6";
     case "IN_PROGRESS":
-      return "#6366f1";
+      return "#3B6EF0";
     case "RESOLVED":
-      return "#10b981";
+      return "#1A7F4A";
     case "ESCALATED":
-      return "#f43f5e";
+      return "#C53030";
     case "CLOSED":
-      return "#64748b";
+      return "#8A93A3";
     default:
-      return "#94a3b8";
+      return "#8A93A3";
   }
 }
 
@@ -129,12 +131,11 @@ function QueryRowComponent({ row }: { row: QueryRow }) {
       <Text style={styles.cell}>{row.subject}</Text>
       <Text style={styles.cell}>{row.student?.name ?? "—"}</Text>
       <Text style={styles.cell}>{row.department?.name ?? "—"}</Text>
-      <View style={styles.cell}>
-        <View style={[styles.statusBadge, { backgroundColor: statusColor(row.status) + "22", borderColor: statusColor(row.status) }]}>
-          <Text style={{ color: statusColor(row.status), fontSize: 7, fontWeight: "bold", textTransform: "uppercase" }}>
-            {row.status}
-          </Text>
-        </View>
+      <View style={styles.cell}>          <View style={[styles.statusBadge, { backgroundColor: statusColor(row.status) + "30", borderColor: statusColor(row.status), borderWidth: 1 }]}>
+            <Text style={{ color: statusColor(row.status), fontSize: 7, fontWeight: "bold", textTransform: "uppercase" }}>
+              {row.status}
+            </Text>
+          </View>
       </View>
       <Text style={[styles.cell, styles.cellMono]}>{row.priority}</Text>
       <Text style={[styles.cell, styles.cellMono, styles.small]}>

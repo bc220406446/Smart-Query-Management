@@ -5,6 +5,8 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import AuthLayout from "@/components/AuthLayout";
+import "@/components/AuthForms.css";
+
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"email" | "otp">("email");
@@ -12,7 +14,7 @@ export default function LoginPage() {
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [resendDisabled, setResendDisabled] = useState(false);
-  const [resendLabel, setResendLabel] = useState("Resend code");
+  const [resendLabel, setResendLabel] = useState("Code sent — check your inbox");
   const [, startTransition] = useTransition();
 
   const handleRequestOtp = async (e: React.FormEvent) => {
@@ -36,8 +38,11 @@ export default function LoginPage() {
       setMode("otp");
       setOtp(["", "", "", "", "", ""]);
       setResendDisabled(true);
-      setResendLabel("Resend in 60s");
-      setTimeout(() => setResendDisabled(false), 60_000);
+      setResendLabel("Code sent — check your inbox");
+      setTimeout(() => {
+        setResendDisabled(false);
+        setResendLabel("Send a new code");
+      }, 60_000);
     });
   };
 
@@ -46,8 +51,6 @@ export default function LoginPage() {
     const next = [...otp];
     next[index] = value.slice(-1);
     setOtp(next);
-
-    // auto-advance
     if (value && index < 5) {
       const nextField = document.getElementById(`otp-${index + 1}`) as HTMLInputElement;
       nextField?.focus();
@@ -62,9 +65,13 @@ export default function LoginPage() {
       <button
         type="submit"
         disabled={pending || otpString.length < 6}
-        className="neu-btn neu-btn-accent w-full mt-4"
+        className="btn btn-primary btn-lg"
       >
-        {pending ? "Verifying…" : otpString.length < 6 ? "Enter the 6-digit code" : "Sign in"}
+        {pending
+          ? "Verifying…"
+          : otpString.length < 6
+          ? "Enter the 6-digit code"
+          : "Sign in"}
       </button>
     );
   };
@@ -73,7 +80,7 @@ export default function LoginPage() {
     <AuthLayout
       title="Sign in"
       subtitle="Enter your institutional email, then verify with the code we send you."
-      actionLabel="Continue with Google"
+      actionLabel="Sign in with Google"
     >
       <form
         onSubmit={mode === "email" ? handleRequestOtp : (e) => {
@@ -90,9 +97,6 @@ export default function LoginPage() {
               setError(data.error ?? "Invalid code. Try again.");
               return;
             }
-            // OTP verified server-side; complete the NextAuth session via the
-            // credentials provider using the verified email + a throwaway OTP
-            // so the JWT gets the correct role.
             await signIn("credentials", {
               email: email.trim(),
               otp: otpString,
@@ -102,66 +106,35 @@ export default function LoginPage() {
             router.push("/dashboard");
           });
         }}
-        className="space-y-4"
       >
-        {error && (
-          <div className="rounded-lg neu-sm p-3 text-sm text-[var(--danger)]">
-            {error}
-          </div>
-        )}
+        {error && <div className="auth-error">{error}</div>}
 
         {mode === "email" && (
           <>
-            <label className="caption">Email address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@vu.edu.pk"
-              required
-              className="neu-input w-full"
-            />
-            <button type="submit" className="neu-btn neu-btn-accent w-full">
-              Send me a code
+            <div className="field" style={{ marginBottom: 14 }}>
+              <label className="field-label">Email address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@vu.edu.pk"
+                required
+                className="field-input"
+              />
+            </div>
+            <button type="submit" className="btn btn-primary w-full" style={{ width: "100%" }}>
+              Send verification code
             </button>
 
-            <div className="auth-divider">or</div>
+            <div className="divider-text">or</div>
 
-            <button
-              type="button"
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-              className="neu-btn w-full flex items-center justify-center gap-2"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M12 5.04c1.85 0 3.5.64 4.8 1.9l3.58-3.58C18.2 1.35 15.3.25 12 .25 7.4.25 3.4 2.78 1.35 6.53l4.16 3.23C6.35 7.08 8.92 5.04 12 5.04z"
-                  opacity="0.9"
-                />
-                <path
-                  fill="currentColor"
-                  d="M23.49 12.27c0-.85-.08-1.67-.22-2.46H12v4.65h6.45c-.28 1.5-1.12 2.77-2.4 3.62l3.76 2.92c2.2-2.03 3.68-5.02 3.68-8.73z"
-                  opacity="0.75"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.52 14.4a7.06 7.06 0 0 1 0-4.6L1.36 6.57A11.92 11.92 0 0 0 .24 12c0 1.94.42 3.78 1.16 5.42l4.12-3.02z"
-                  opacity="0.85"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23.75c3.12 0 5.74-1.03 7.66-2.79l-3.76-2.92c-1.03.7-2.36 1.12-3.9 1.12-3.08 0-5.65-2.04-6.58-4.76l-4.16 3.23C3.4 21.22 7.4 23.75 12 23.75z"
-                  opacity="0.65"
-                />
-              </svg>
-              Sign in with Google
-            </button>
+            <SignInButtonGoogle />
           </>
         )}
 
         {mode === "otp" && (
           <>
-            <p className="caption text-center">
+            <p style={{ textAlign: "center", fontSize: 13, color: "var(--text-secondary)", marginBottom: 16 }}>
               We sent a 6-digit code to <strong>{email}</strong>
             </p>
             <div className="otp-row" role="group" aria-label="One-time code">
@@ -186,53 +159,21 @@ export default function LoginPage() {
               {resendDisabled ? (
                 resendLabel
               ) : (
-                <button
-                  type="button"
-                  onClick={handleRequestOtp}
-                  disabled={resendDisabled}
-                >
+                <button type="button" onClick={handleRequestOtp}>
                   {resendLabel}
                 </button>
               )}
             </p>
 
-            <div className="auth-divider">or</div>
+            <div className="divider-text">or</div>
 
-            <button
-              type="button"
-              onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
-              className="neu-btn w-full flex items-center justify-center gap-2"
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M12 5.04c1.85 0 3.5.64 4.8 1.9l3.58-3.58C18.2 1.35 15.3.25 12 .25 7.4.25 3.4 2.78 1.35 6.53l4.16 3.23C6.35 7.08 8.92 5.04 12 5.04z"
-                  opacity="0.9"
-                />
-                <path
-                  fill="currentColor"
-                  d="M23.49 12.27c0-.85-.08-1.67-.22-2.46H12v4.65h6.45c-.28 1.5-1.12 2.77-2.4 3.62l3.76 2.92c2.2-2.03 3.68-5.02 3.68-8.73z"
-                  opacity="0.75"
-                />
-                <path
-                  fill="currentColor"
-                  d="M5.52 14.4a7.06 7.06 0 0 1 0-4.6L1.36 6.57A11.92 11.92 0 0 0 .24 12c0 1.94.42 3.78 1.16 5.42l4.12-3.02z"
-                  opacity="0.85"
-                />
-                <path
-                  fill="currentColor"
-                  d="M12 23.75c3.12 0 5.74-1.03 7.66-2.79l-3.76-2.92c-1.03.7-2.36 1.12-3.9 1.12-3.08 0-5.65-2.04-6.58-4.76l-4.16 3.23C3.4 21.22 7.4 23.75 12 23.75z"
-                  opacity="0.65"
-                />
-              </svg>
-              Sign in with Google
-            </button>
+            <SignInButtonGoogle />
 
-            <p className="mt-4 text-center caption">
+            <p style={{ textAlign: "center", marginTop: 18, fontSize: 12, color: "var(--text-secondary)" }}>
               <button
                 type="button"
                 onClick={() => setMode("email")}
-                className="text-[var(--accent)] font-medium underline hover:no-underline"
+                style={{ background: "none", border: "none", color: "var(--brand-500)", fontWeight: 600, cursor: "pointer", textDecoration: "underline", padding: 0, fontSize: "inherit" }}
               >
                 Use a different email
               </button>
@@ -243,3 +184,38 @@ export default function LoginPage() {
     </AuthLayout>
   );
 }
+
+function SignInButtonGoogle() {
+  return (
+    <button
+      type="button"
+      onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+      className="btn btn-secondary w-full"
+      style={{ width: "100%", gap: 10 }}
+    >
+      <svg width={18} height={18} viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M12 5.04c1.85 0 3.5.64 4.8 1.9l3.58-3.58C18.2 1.35 15.3.25 12 .25 7.4.25 3.4 2.78 1.35 6.53l4.16 3.23C6.35 7.08 8.92 5.04 12 5.04z"
+        />
+        <path
+          fill="currentColor"
+          d="M23.49 12.27c0-.85-.08-1.67-.22-2.46H12v4.65h6.45c-.28 1.5-1.12 2.77-2.4 3.62l3.76 2.92c2.2-2.03 3.68-5.02 3.68-8.73z"
+          opacity={0.75}
+        />
+        <path
+          fill="currentColor"
+          d="M5.52 14.4a7.06 7.06 0 0 1 0-4.6L1.36 6.57A11.92 11.92 0 0 0 .24 12c0 1.94.42 3.78 1.16 5.42l4.12-3.02z"
+          opacity={0.85}
+        />
+        <path
+          fill="currentColor"
+          d="M12 23.75c3.12 0 5.74-1.03 7.66-2.79l-3.76-2.92c-1.03.7-2.36 1.12-3.9 1.12-3.08 0-5.65-2.04-6.58-4.76l-4.16 3.23C3.4 21.22 7.4 23.75 12 23.75z"
+          opacity={0.65}
+        />
+      </svg>
+      Sign in with Google
+    </button>
+  );
+}
+

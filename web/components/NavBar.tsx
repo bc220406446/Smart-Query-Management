@@ -29,35 +29,120 @@ const ROLE_LINKS: Record<Role, Array<{ href: string; label: string }>> = {
 export default function NavBar({ user }: { user: SessionUser }) {
   const links = ROLE_LINKS[user.role] ?? [];
   return (
-    <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/dashboard" className="flex items-center gap-2 text-sm font-semibold text-white">
-          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600 text-xs font-bold">
-            SQ
-          </span>
-          Smart Query Hub
-        </Link>
-        <nav className="flex items-center gap-1">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+    <header
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "0 24px",
+        height: "56px",
+        background: "var(--bg-elevated)",
+        borderBottom: "1px solid var(--border-light)",
+        boxShadow: "var(--shadow-xs)",
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+      }}
+    >
+      <Link
+        href="/dashboard"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          fontSize: "15px",
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          textDecoration: "none",
+        }}
+      >
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 28,
+            height: 28,
+            borderRadius: "8px",
+            background: "var(--brand-500)",
+            color: "var(--brand-contrast)",
+            fontSize: 12,
+            fontWeight: 700,
+            letterSpacing: "0.02em",
+          }}
+        >
+          SQ
+        </span>
+        <span style={{ letterSpacing: "0.01em" }}>Smart Query Hub</span>
+      </Link>
+
+      <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        {links.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            className="nav-link"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "7px 12px",
+              fontSize: 13,
+              fontWeight: 500,
+              color: "var(--text-secondary)",
+              borderRadius: "8px",
+              textDecoration: "none",
+              transition: "background 0.15s ease, color 0.15s ease",
+            }}
+          >
+            {l.label}
+          </Link>
+        ))}
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginLeft: 16,
+            paddingLeft: 16,
+            borderLeft: "1px solid var(--border-light)",
+          }}
+        >
+          <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--text-secondary)" }}>
+            <span style={{ lineHeight: 1.4 }}>{user.name ?? user.email}</span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "2px 8px",
+                borderRadius: "20px",
+                background: `${user.role === "ADMIN" ? "var(--brand-50)" : user.role === "HOD" ? "var(--warning-bg)" : user.role === "INSTRUCTOR" ? "var(--info-bg)" : "var(--bg-muted)"}`,
+                border: "1px solid " + (user.role === "ADMIN"
+                  ? "var(--brand-100)"
+                  : user.role === "HOD"
+                  ? "var(--warning-border)"
+                  : user.role === "INSTRUCTOR"
+                  ? "var(--info-border)"
+                  : "var(--border-light)"),
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                color:
+                  user.role === "ADMIN"
+                    ? "var(--brand-700)"
+                    : user.role === "HOD"
+                    ? "var(--warning)"
+                    : user.role === "INSTRUCTOR"
+                    ? "var(--info)"
+                    : "var(--text-tertiary)",
+              }}
             >
-              {l.label}
-            </Link>
-          ))}
-          <span className="ml-2 hidden items-center gap-2 border-l border-slate-700 pl-3 sm:flex">
-            <span className="text-xs text-slate-400">
-              {user.name ?? user.email}{" "}
-              <span className="ml-1 rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-300">
-                {user.role}
-              </span>
+              {user.role}
             </span>
-            <SignOutButton />
           </span>
-        </nav>
-      </div>
+          <SignOutButton />
+        </span>
+      </nav>
     </header>
   );
 }

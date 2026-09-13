@@ -18,19 +18,38 @@ export default async function AnnouncementsPage({
   });
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-white">Announcements</h1>
-      <p className="mt-1 text-sm text-slate-400">FR-11 — broadcast a message to every student dashboard.</p>
+    <main className="container-page" style={{ maxWidth: 720 }}>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Announcements</h1>
+          <p className="page-subtitle">FR-11 — broadcast a message to every student dashboard.</p>
+        </div>
+      </div>
 
       {error && (
-        <p className="mt-4 rounded-lg border border-rose-800 bg-rose-950/40 px-4 py-3 text-sm text-rose-300">
+        <div className="error-box" style={{ marginBottom: 20 }}>
           {error}
-        </p>
+        </div>
       )}
 
-      <form action={createAnnouncement} className="mt-6 space-y-4 rounded-xl border border-slate-800 bg-slate-900 p-5">
-        <div>
-          <label htmlFor="title" className="block text-sm font-medium text-slate-300">Title</label>
+      <form
+        action={createAnnouncement}
+        className="card"
+        style={{ marginTop: 8, padding: "20px 24px" }}
+      >
+        <h3
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            marginBottom: 16,
+          }}
+        >
+          New announcement
+        </h3>
+        <div className="field" style={{ marginBottom: 16 }}>
+          <label htmlFor="title" className="field-label">
+            Title
+          </label>
           <input
             id="title"
             name="title"
@@ -38,47 +57,82 @@ export default async function AnnouncementsPage({
             required
             minLength={3}
             maxLength={150}
-            className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
+            className="field-input"
             placeholder="e.g. Midterm exam schedule released"
           />
         </div>
-        <div>
-          <label htmlFor="body" className="block text-sm font-medium text-slate-300">Message</label>
+        <div className="field" style={{ marginBottom: 20 }}>
+          <label htmlFor="body" className="field-label">
+            Message
+          </label>
           <textarea
             id="body"
             name="body"
             required
             minLength={10}
-            rows={5}
-            className="mt-1.5 w-full rounded-lg border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 focus:border-indigo-500 focus:outline-none"
+            rows={6}
+            className="field-textarea"
             placeholder="Details students need to know…"
           />
         </div>
-        <button
-          type="submit"
-          className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500"
-        >
+        <button type="submit" className="btn btn-primary btn-lg">
           Publish announcement
         </button>
       </form>
 
-      <h2 className="mt-10 text-sm font-semibold text-slate-300">Previously published</h2>
-      <div className="mt-3 space-y-3">
-        {announcements.length === 0 && (
-          <p className="rounded-xl border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500">
-            Nothing published yet.
-          </p>
-        )}
-        {announcements.map((a) => (
-          <div key={a.id} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-slate-100">{a.title}</p>
-              <p className="text-xs text-slate-600">{new Date(a.createdAt).toLocaleString()}</p>
-            </div>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{a.body}</p>
-            <p className="mt-2 text-[11px] text-slate-600">by {a.author.name ?? "Admin"}</p>
+      <h3
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          marginTop: 28,
+          marginBottom: 12,
+        }}
+      >
+        Previously published
+      </h3>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {announcements.length === 0 ? (
+          <div className="card" style={{ textAlign: "center", padding: "28px 16px" }}>
+            <p style={{ color: "var(--text-tertiary)", fontSize: 13 }}>
+              Nothing published yet.
+            </p>
           </div>
-        ))}
+        ) : (
+          announcements.map((a) => (
+            <div key={a.id} className="card">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  marginBottom: 8,
+                }}
+              >
+                <p style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                  {a.title}
+                </p>
+                <span className="mono-sm">
+                  {new Date(a.createdAt).toLocaleString()}
+                </span>
+              </div>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "var(--text-secondary)",
+                  lineHeight: 1.6,
+                  margin: "0 0 10px",
+                }}
+              >
+                {a.body}
+              </p>
+              <p className="mono-sm" style={{ margin: 0 }}>
+                by {a.author.name ?? "Admin"}
+              </p>
+            </div>
+          ))
+        )}
       </div>
     </main>
   );

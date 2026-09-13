@@ -6,7 +6,15 @@ import { overrideQuery } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_OPTIONS = ["SUBMITTED", "CLASSIFYING", "ROUTED", "IN_PROGRESS", "RESOLVED", "ESCALATED", "CLOSED"];
+const STATUS_OPTIONS = [
+  "SUBMITTED",
+  "CLASSIFYING",
+  "ROUTED",
+  "IN_PROGRESS",
+  "RESOLVED",
+  "ESCALATED",
+  "CLOSED",
+];
 
 export default async function HodConsolePage({
   searchParams,
@@ -37,106 +45,214 @@ export default async function HodConsolePage({
 
   function OverrideForm({ query }: { query: (typeof openQueries)[number] }) {
     return (
-      <form action={overrideQuery} className="flex flex-wrap items-center gap-2">
-        <input type="hidden" name="queryId" value={query.id} />
-        <select
-          name="status"
-          defaultValue={query.status}
-          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200"
+      <form
+        action={overrideQuery}
+        className="card"
+        style={{ padding: "12px 14px", marginTop: 10 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+          }}
         >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>{s.replace("_", " ")}</option>
-          ))}
-        </select>
-        <select
-          name="assignedToId"
-          defaultValue={query.assignedToId ?? ""}
-          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-slate-200"
-        >
-          <option value="">— assign —</option>
-          {assignees.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name} ({a.role})
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-500"
-        >
-          Apply
-        </button>
+          <input type="hidden" name="queryId" value={query.id} />
+          <span style={{ fontSize: 11, color: "var(--text-tertiary)", marginRight: 4 }}>
+            Status:
+          </span>
+          <select
+            name="status"
+            defaultValue={query.status}
+            className="field-select"
+            style={{ padding: "6px 28px 6px 10px", fontSize: 12 }}
+          >
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s.replace("_", " ")}
+              </option>
+            ))}
+          </select>
+          <span style={{ fontSize: 11, color: "var(--text-tertiary)", marginRight: 4 }}>
+            Assign to:
+          </span>
+          <select
+            name="assignedToId"
+            defaultValue={query.assignedToId ?? ""}
+            className="field-select"
+            style={{ padding: "6px 28px 6px 10px", fontSize: 12 }}
+          >
+            <option value="">— assign —</option>
+            {assignees.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name} ({a.role})
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="btn btn-primary btn-sm"
+            style={{ marginLeft: "auto" }}
+          >
+            Apply
+          </button>
+        </div>
       </form>
     );
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-white">HOD Console</h1>
-      <p className="mt-1 text-sm text-slate-400">
-        FR-07 escalated queries and FR-09 override / reassignment authority.
-      </p>
+    <main className="container-page">
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">HOD Console</h1>
+          <p className="page-subtitle">
+            FR-07 escalated queries and FR-09 override / reassignment authority.
+          </p>
+        </div>
+      </div>
 
       {error && (
-        <p className="mt-4 rounded-lg border border-rose-800 bg-rose-950/40 px-4 py-3 text-sm text-rose-300">
+        <div className="error-box" style={{ marginBottom: 20 }}>
           {error}
-        </p>
+        </div>
       )}
 
-      <h2 className="mt-8 text-sm font-semibold text-slate-300">
-        ⚠️ Escalated (awaiting 24h or manual escalation)
-      </h2>
-      <div className="mt-3 overflow-hidden rounded-xl border border-slate-800">
-        {escalated.length === 0 ? (
-          <p className="bg-slate-900 p-6 text-sm text-slate-500">No escalated queries. 🎉</p>
-        ) : (
-          <ul className="divide-y divide-slate-800">
-            {escalated.map((q) => (
-              <li key={q.id} className="bg-slate-900/60 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-100">{q.subject}</p>
-                    <p className="text-xs text-slate-500">
-                      {q.student?.name ?? "Anonymous"} · escalated {q.escalatedAt ? new Date(q.escalatedAt).toLocaleString() : "—"}
-                    </p>
+      <section style={{ marginTop: 8 }}>
+        <h2
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: "var(--danger)",
+            marginBottom: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span style={{ fontSize: 16 }}>⚠️</span>
+          Escalated (awaiting 24h or manual escalation)
+        </h2>
+        <div className="table-wrap">
+          {escalated.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-state-icon">🎉</span>
+              No escalated queries.
+            </div>
+          ) : (
+            <ul style={{ listStyle: "none", margin: 0, padding: "8px 0" }}>
+              {escalated.map((q) => (
+                <li
+                  key={q.id}
+                  className="card"
+                  style={{
+                    padding: "12px 14px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    borderColor: "var(--danger-border)",
+                    borderWidth: 1,
+                    background: "var(--danger-bg)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontWeight: 500,
+                          color: "var(--text-primary)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {q.subject}
+                      </p>
+                      <p className="mono-sm" style={{ marginBottom: 2 }}>
+                        {q.student?.name ?? "Anonymous"} · escalated{" "}
+                        {q.escalatedAt
+                          ? new Date(q.escalatedAt).toLocaleString()
+                          : "—"}
+                      </p>
+                    </div>
+                    <StatusBadge status={q.status} />
                   </div>
-                  <StatusBadge status={q.status} />
-                </div>
-                <div className="mt-3">
                   <OverrideForm query={q} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
 
-      <h2 className="mt-8 text-sm font-semibold text-slate-300">Open queries</h2>
-      <div className="mt-3 overflow-hidden rounded-xl border border-slate-800">
-        {openQueries.length === 0 ? (
-          <p className="bg-slate-900 p-6 text-sm text-slate-500">No open queries.</p>
-        ) : (
-          <ul className="divide-y divide-slate-800">
-            {openQueries.map((q) => (
-              <li key={q.id} className="bg-slate-900/60 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-100">{q.subject}</p>
-                    <p className="text-xs text-slate-500">
-                      {q.student?.name ?? "Anonymous"} · {q.assignedTo?.name ?? "unassigned"} ·{" "}
-                      {new Date(q.createdAt).toLocaleString()}
-                    </p>
+      <section style={{ marginTop: 28 }}>
+        <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
+          Open queries
+        </h2>
+        <div className="table-wrap">
+          {openQueries.length === 0 ? (
+            <div className="empty-state">
+              <span className="empty-state-icon">📭</span>
+              No open queries.
+            </div>
+          ) : (
+            <ul style={{ listStyle: "none", margin: 0, padding: "8px 0" }}>
+              {openQueries.map((q) => (
+                <li
+                  key={q.id}
+                  className="card"
+                  style={{
+                    padding: "12px 14px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontWeight: 500,
+                          color: "var(--text-primary)",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {q.subject}
+                      </p>
+                      <p className="mono-sm">
+                        {q.student?.name ?? "Anonymous"} ·{" "}
+                        {q.assignedTo?.name ?? "unassigned"} ·
+                        {new Date(q.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <StatusBadge status={q.status} />
                   </div>
-                  <StatusBadge status={q.status} />
-                </div>
-                <div className="mt-3">
                   <OverrideForm query={q} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

@@ -9,9 +9,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     # Shared PostgreSQL — same database the Next.js web layer uses.
-    database_url: str = (
-        "postgresql+psycopg://postgres:postgres@localhost:5432/smartquery"
-    )
+    database_url: str
 
     # AI provider keys. Empty values make the pipeline fall back to the
     # deterministic rule-based classifier so the service always works locally.

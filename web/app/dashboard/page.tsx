@@ -5,14 +5,12 @@ import { StatusBadge } from "@/components/QueryStatusBadge";
 
 export const dynamic = "force-dynamic";
 
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 text-3xl font-bold text-white">{value}</p>
-    </div>
-  );
-}
+const statCards = (label: string, value: number) => (
+  <div className="stat-card">
+    <p className="stat-label">{label}</p>
+    <p className="stat-value">{value}</p>
+  </div>
+);
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -39,60 +37,74 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">
-            Welcome, {user.name?.split(" ")[0] ?? "there"} 👋
+    <main className="container-page">
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">
+            Welcome, {user.name?.split(" ")[0] ?? "there"}
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
-            {isStaff ? "Your assigned queries and announcements." : "Track your queries and their resolution status."}
+          <p className="page-subtitle">
+            {isStaff
+              ? "Your assigned queries and announcements."
+              : "Track your queries and their resolution status."}
           </p>
         </div>
         {!isStaff && (
           <Link
             href="/dashboard/queries/new"
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+            className="btn btn-primary"
           >
             + New Query
           </Link>
         )}
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label={isStaff ? "Assigned open" : "Open queries"} value={openCount} />
-        <StatCard label={isStaff ? "Assigned resolved" : "Resolved"} value={resolvedCount} />
-        <StatCard label="Announcements" value={announcements.length} />
+      <div className="stats-grid">
+        {statCards(isStaff ? "Assigned open" : "Open queries", openCount)}
+        {statCards(isStaff ? "Assigned resolved" : "Resolved", resolvedCount)}
+        {statCards("Announcements", announcements.length)}
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <section className="lg:col-span-2">
-          <h2 className="text-sm font-semibold text-slate-300">
+      <div className="grid-3" style={{ marginTop: 28 }}>
+        <section>
+          <h3 style={{ marginBottom: 16 }}>
             {isStaff ? "Recently assigned" : "Recent queries"}
-          </h2>
-          <div className="mt-3 overflow-hidden rounded-xl border border-slate-800">
+          </h3>
+          <div className="table-wrap" style={{ padding: 0 }}>
             {myQueries.length === 0 ? (
-              <p className="bg-slate-900 p-6 text-sm text-slate-500">
+              <div className="empty-state">
+                <span className="empty-state-icon">📋</span>
                 Nothing here yet. {isStaff ? "Queries routed to you will appear here." : "Submit a query to get started."}
-              </p>
+              </div>
             ) : (
-              <ul className="divide-y divide-slate-800">
+              <ul style={{ listStyle: "none", margin: 0, padding: "8px 0" }}>
                 {myQueries.map((q) => (
-                  <li key={q.id}>
+                  <li
+                    key={q.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      padding: "12px 14px",
+                      borderBottom: "1px solid var(--border-light)",
+                    }}
+                  >
                     <Link
                       href={isStaff ? `/staff/queries/${q.id}` : `/dashboard/queries/${q.id}`}
-                      className="flex items-center justify-between gap-4 bg-slate-900 px-4 py-3 transition hover:bg-slate-800/60"
+                      className="table-link"
+                      style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}
                     >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-slate-100">{q.subject}</p>
-                        <p className="text-xs text-slate-500">
-                          {new Date(q.createdAt).toLocaleString()}
-                          {q.assignedTo?.name ? ` · ${q.assignedTo.name}` : ""}
-                          {q.department?.name ? ` · ${q.department.name}` : ""}
-                        </p>
-                      </div>
-                      <StatusBadge status={q.status} />
+                      <span style={{ fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {q.subject}
+                      </span>
+                      <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                        {new Date(q.createdAt).toLocaleString()}
+                        {q.assignedTo?.name ? ` · ${q.assignedTo.name}` : ""}
+                        {q.department?.name ? ` · ${q.department.name}` : ""}
+                      </span>
                     </Link>
+                    <StatusBadge status={q.status} />
                   </li>
                 ))}
               </ul>
@@ -100,21 +112,24 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        <section>
-          <h2 className="text-sm font-semibold text-slate-300">Announcements</h2>
-          <div className="mt-3 space-y-3">
-            {announcements.length === 0 && (
-              <p className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-sm text-slate-500">
+        <section style={{ marginTop: 0 }}>
+          <h3 style={{ marginBottom: 16 }}>Announcements</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {announcements.length === 0 ? (
+              <div className="card" style={{ textAlign: "center", padding: "24px 16px", color: "var(--text-tertiary)", fontSize: 13 }}>
                 No announcements yet.
-              </p>
-            )}
-            {announcements.map((a) => (
-              <div key={a.id} className="rounded-xl border border-slate-800 bg-slate-900 p-4">
-                <p className="text-sm font-semibold text-slate-100">{a.title}</p>
-                <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-slate-400">{a.body}</p>
-                <p className="mt-2 text-[11px] text-slate-600">{new Date(a.createdAt).toLocaleDateString()}</p>
               </div>
-            ))}
+            ) : (
+              announcements.map((a) => (
+                <div key={a.id} className="card" style={{ padding: "14px 16px" }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>{a.title}</p>
+                  <p className="line-clamp-2" style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>{a.body}</p>
+                  <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-tertiary)" }}>
+                    {new Date(a.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>

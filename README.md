@@ -67,6 +67,9 @@ writes the same rows. They stay in sync with no duplicated logic:
 > `localhost:5432` (db `smartquery`, user/password `postgres`) — a drop-in
 > alternative; just point the env files at it instead.
 
+The application is configured for Supabase and does not start or require a
+local PostgreSQL server. Do not run `docker compose up` for the database.
+
 ### 2. Web app (Next.js)
 
 ```bash

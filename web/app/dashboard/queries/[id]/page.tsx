@@ -29,57 +29,151 @@ export default async function QueryDetailPage({
   if (!query) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <p className="font-mono text-xs text-slate-500">Ticket #{query.ticketNumber.slice(0, 8)}</p>
-      <div className="mt-1 flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-white">{query.subject}</h1>
+    <main className="container-page" style={{ maxWidth: 880 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 8,
+        }}
+      >
+        <span className="mono-sm">Ticket #{query.ticketNumber.slice(0, 8)}</span>
         <StatusBadge status={query.status} />
         <PriorityBadge priority={query.priority} />
       </div>
 
-      <div className="mt-1 flex items-center gap-4 text-xs text-slate-500">
+      <h1
+        style={{
+          fontSize: 24,
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          margin: "0 0 6px",
+          letterSpacing: "-0.01em",
+        }}
+      >
+        {query.subject}
+      </h1>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          fontSize: 12,
+          color: "var(--text-tertiary)",
+          marginBottom: 20,
+        }}
+      >
         <span>Submitted {new Date(query.createdAt).toLocaleString()}</span>
-        <span>Routed to {query.assignedTo?.name ?? "—"} ({query.department?.name ?? "unassigned"})</span>
+        <span>
+          Routed to {query.assignedTo?.name ?? "—"} (
+          {query.department?.name ?? "unassigned"})
+        </span>
       </div>
 
       {submitted === "1" && (
-        <p className="mt-3 rounded-lg border border-emerald-800 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-300">
+        <div className="success-box" style={{ marginBottom: 20 }}>
           Query submitted! It has been queued for AI classification and routing.
-        </p>
+        </div>
       )}
 
       <QueryStatusPoller queryId={query.id} currentStatus={query.status} />
 
-      <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Your message</h2>
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">{query.message}</p>
+      <div className="card" style={{ marginTop: 8 }}>
+        <div className="card-header">
+          <span className="card-title">Your message</span>
+        </div>
+        <p
+          style={{
+            whiteSpace: "pre-wrap",
+            fontSize: 14,
+            lineHeight: 1.6,
+            color: "var(--text-primary)",
+          }}
+        >
+          {query.message}
+        </p>
       </div>
 
-      <h2 className="mt-8 text-sm font-semibold text-slate-300">Conversation &amp; updates</h2>
-      <div className="mt-3 space-y-3">
-        {query.replies.length === 0 && (
-          <p className="rounded-xl border border-dashed border-slate-800 p-5 text-center text-sm text-slate-500">
-            No replies yet. Your query is being handled — you&apos;ll be notified when there&apos;s an update.
-          </p>
-        )}
-        {query.replies.map((r) => (
-          <div
-            key={r.id}
-            className={`rounded-xl border p-4 ${
-              r.isAiDraft
-                ? "border-amber-800 bg-amber-950/20"
-                : "border-slate-800 bg-slate-900"
-            }`}
-          >
-            <div className="flex items-center justify-between text-xs text-slate-500">
-              <span className="font-medium text-slate-300">
-                {r.isAiDraft ? "AI draft (pending staff review)" : r.author?.name ?? "Staff"}
-              </span>
-              <span>{new Date(r.createdAt).toLocaleString()}</span>
-            </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-200">{r.body}</p>
+      <h3
+        style={{
+          fontSize: 14,
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          marginTop: 28,
+          marginBottom: 12,
+        }}
+      >
+        Conversation &amp; updates
+      </h3>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {query.replies.length === 0 ? (
+          <div className="card" style={{ textAlign: "center", padding: "28px 16px" }}>
+            <p style={{ color: "var(--text-tertiary)", fontSize: 13 }}>
+              No replies yet. Your query is being handled — you will be notified
+              when there is an update.
+            </p>
           </div>
-        ))}
+        ) : (
+          query.replies.map((r) => (
+            <div
+              key={r.id}
+              className="card"
+              style={{
+                borderColor:
+                  r.isAiDraft
+                    ? "var(--warning-border)"
+                    : "var(--border-light)",
+                borderWidth: 1,
+                background:
+                  r.isAiDraft
+                    ? "var(--warning-bg)"
+                    : "var(--bg-elevated)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  fontSize: 11,
+                  marginBottom: 8,
+                }}
+              >
+                <span
+                  style={{
+                    fontWeight: 600,
+                    color:
+                      r.isAiDraft
+                        ? "var(--warning)"
+                        : "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  {r.isAiDraft
+                    ? "AI draft (pending staff review)"
+                    : r.author?.name ?? "Staff"}
+                </span>
+                <span className="mono-sm">
+                  {new Date(r.createdAt).toLocaleString()}
+                </span>
+              </div>
+              <p
+                style={{
+                  whiteSpace: "pre-wrap",
+                  fontSize: 14,
+                  lineHeight: 1.6,
+                  color: "var(--text-primary)",
+                }}
+              >
+                {r.body}
+              </p>
+            </div>
+          ))
+        )}
       </div>
     </main>
   );

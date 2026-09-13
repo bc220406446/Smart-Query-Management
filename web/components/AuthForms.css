@@ -1,86 +1,120 @@
-@layer components {
-  .auth-card {
-    background: var(--surface);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-soft);
-    padding: 32px 28px;
-    max-width: 440px;
-    width: 100%;
-  }
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  margin: 22px 0;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-light);
+}
 
-  .auth-title {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: var(--foreground);
-    margin: 0 0 4px;
-    text-align: center;
-  }
+.otp-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+.otp-chip {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.otp-chip:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-100);
+  background: var(--bg-elevated);
+}
+.otp-chip:active:not(:disabled) {
+  background: var(--bg-hover);
+  transform: scale(0.97);
+}
+.otp-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .auth-sub {
-    color: var(--foreground-soft);
-    text-align: center;
-    margin: 0 0 24px;
-    font-size: 0.92rem;
-  }
+.resend-link {
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 10px;
+}
+.resend-link button {
+  background: none;
+  border: none;
+  color: var(--brand-500);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: none;
+  padding: 0;
+  line-height: 1;
+}
+.resend-link button:hover {
+  color: var(--brand-700);
+  text-decoration: underline;
+}
 
-  .auth-divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: var(--foreground-soft);
-    font-size: 0.82rem;
-    margin: 22px 0;
-  }
-  .auth-divider::before,
-  .auth-divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--shadow-dark);
-    opacity: 0.25;
-  }
+.divider-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  margin: 20px 0;
+}
+.divider-text::before,
+.divider-text::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border-light);
+}
 
-  .otp-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-top: 6px;
-  }
-  .otp-chip {
-    background: var(--surface-pressed);
-    box-shadow: var(--shadow-soft-xs);
-    border: none;
-    border-radius: var(--radius-xs);
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--foreground);
-    text-align: center;
-    outline: none;
-    transition: box-shadow 0.15s ease, transform 0.1s ease;
-  }
-  .otp-chip:focus {
-    box-shadow: var(--shadow-soft-xs), var(--shadow-glow);
-  }
-  .otp-chip:active {
-    box-shadow: inset 2px 2px 4px var(--shadow-dark), inset -2px -2px 4px var(--shadow-light);
-  }
+.social-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
 
-  .resend-link {
-    color: var(--foreground-soft);
-    font-size: 0.85rem;
-    text-align: center;
-    margin-top: 10px;
-  }
-  .resend-link button {
-    background: none;
-    border: none;
-    color: var(--accent);
-    font-weight: 600;
-    cursor: pointer;
-    font-size: inherit;
-    text-decoration: underline;
-    padding: 0;
-  }
+.auth-note {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.auth-error {
+  padding: 10px 12px;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.auth-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
 }

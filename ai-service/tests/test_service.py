@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 
-from app.config import settings
+from app.config import settings as app_settings
 from app.models import (
     AuditLog,
     Department,
@@ -101,9 +101,12 @@ def test_escalation_flags_stale_queries(db_session):
 
     # 1h threshold: cutoff sits between the two updated_at values, so only
     # the stale query (30h old) qualifies.
-    settings.escalation_hours = 1
-    escalated = run_escalation(db_session)
-    settings.escalation_hours = 24
+    saved = app_settings.escalation_hours
+    app_settings.escalation_hours = 1
+    try:
+        escalated = run_escalation(db_session)
+    finally:
+        app_settings.escalation_hours = saved
 
     assert stale.id in escalated
     assert fresh.id not in escalated

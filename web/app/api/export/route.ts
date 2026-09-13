@@ -59,9 +59,27 @@ export async function GET() {
     });
   }
 
-  ws.getRow(1).font = { bold: true };
-  ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E293B" } };
-  ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
+  // Header row
+  ws.getRow(1).font = { bold: true, color: { argb: "FF1A1D23" } };
+  ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF161B22" } };
+  ws.getRow(1).border = {
+    top: { style: "thin", color: { argb: "FF161B22" } },
+    bottom: { style: "thin", color: { argb: "FF161B22" } },
+    left: { style: "thin", color: { argb: "FF161B22" } },
+    right: { style: "thin", color: { argb: "FF161B22" } },
+  };
+
+  for (let r = 2; r <= ws.rowCount; r++) {
+    ws.getRow(r).border = {
+      top: { style: "hair", color: { argb: "FFD3D7DE" } },
+      bottom: { style: "hair", color: { argb: "FFD3D7DE" } },
+      left: { style: "hair", color: { argb: "FFD3D7DE" } },
+      right: { style: "hair", color: { argb: "FFD3D7DE" } },
+    };
+    if (r % 2 === 0) {
+      ws.getRow(r).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF6F7F9" } };
+    }
+  }
 
   const buffer = await workbook.xlsx.writeBuffer();
 
