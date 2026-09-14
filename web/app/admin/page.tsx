@@ -66,7 +66,7 @@ export default async function AdminAnalyticsPage() {
       <div className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">Analytics Dashboard</h1>
-          <p className="page-subtitle">FR-10 — volume, routing, and resolution overview.</p>
+          <p className="page-subtitle">FR-10 - volume, routing, and resolution overview.</p>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export default async function AdminAnalyticsPage() {
         </section>
         <section className="card" style={{ gridColumn: "1 / -1" }}>
           <div className="card-header">
-            <span className="card-title">Volume — last 7 days</span>
+            <span className="card-title">Volume - last 7 days</span>
           </div>
           <div style={{ padding: "4px 0 12px" }}>
             <VolumeLine data={volume} />

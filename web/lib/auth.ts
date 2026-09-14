@@ -1,11 +1,13 @@
 import NextAuth from "next-auth";
 import type { Session } from "next-auth";
 import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { verifyOtp } from "@/lib/otp";
+import { verifyPassword } from "@/lib/password";
 
 // ---------------------------------------------------------------------------
 // Auth.js v5 (beta) configuration.
@@ -36,31 +38,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   providers: [
     Google,
+    GitHub,
     Credentials({
-      name: "email-otp",
+      name: "email-password",
       credentials: {
         email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
         otp: { label: "OTP", type: "text" },
       },
       async authorize(credentials) {
         const email = (credentials?.email as string | undefined)?.trim().toLowerCase();
+        const password = credentials?.password as string | undefined;
         const otp = (credentials?.otp as string | undefined)?.trim();
-        if (!email || !otp) return null;
+        if (!email || (!password && !otp)) return null;
 
-        const valid = await verifyOtp(email, otp);
-        if (!valid) return null;
-
-        // OTP verified — sign in / up the user.
         let dbUser = await prisma.user.findUnique({
           where: { email },
-          select: { id: true, email: true, name: true, role: true },
+          select: { id: true, email: true, name: true, role: true, passwordHash: true },
         });
+
+        if (password) {
+          if (!dbUser?.passwordHash || !(await verifyPassword(password, dbUser.passwordHash))) return null;
+          return { id: dbUser.id, email: dbUser.email, name: dbUser.name ?? undefined, role: dbUser.role };
+        }
+
+        const valid = await verifyOtp(email, otp!);
+        if (!valid) return null;
+
+        // OTP verified - sign in / up the user.
         if (!dbUser) {
           dbUser = await prisma.user.create({
             data: { email, name: email.split("@")[0], role: roleForEmail(email) },
-            select: { id: true, email: true, name: true, role: true },
+            select: { id: true, email: true, name: true, role: true, passwordHash: true },
           });
         }
+        if (!dbUser) return null;
         return {
           id: dbUser.id,
           email: dbUser.email,

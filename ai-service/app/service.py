@@ -179,7 +179,7 @@ def _notify_webhook(query_id: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Email ingestion (FR-02) — Gmail API poller stub
+# Email ingestion (FR-02) - Gmail API poller stub
 # ---------------------------------------------------------------------------
 
 def _build_query_from_email(subject: str, snippet: str, sender: str, thread_id: str, received_at: datetime) -> dict:
@@ -268,7 +268,7 @@ def gmail_poll_for_emails(db: Session, label: str = "INBOX", max_messages: int =
 
     try:
         # Build a Gmail service via the Google API client (discovered via genai's
-        # dependencies) — in production, authenticate with a service account or
+        # dependencies) - in production, authenticate with a service account or
         # OAuth2 refresh token scoped to https://www.googleapis.com/auth/gmail.readonly
         # For this stub we document the shape and return empty until credentials are wired.
         logger.info(

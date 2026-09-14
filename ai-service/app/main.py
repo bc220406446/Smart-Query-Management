@@ -13,7 +13,7 @@ logging.basicConfig(
 )
 
 app = FastAPI(
-    title="Smart Query Hub — AI Service",
+    title="Smart Query Hub - AI Service",
     description=(
         "Classification, routing, reply drafting, and 24h escalation for the "
         "university query system. Shares the PostgreSQL database with the "

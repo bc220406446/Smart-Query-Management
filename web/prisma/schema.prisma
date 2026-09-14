@@ -1,4 +1,4 @@
-// Shared database schema — source of truth for the whole system.
+// Shared database schema - source of truth for the whole system.
 // The Next.js web layer owns this schema; the FastAPI AI service
 // mirrors these tables via SQLAlchemy (see ai-service/app/models.py)
 // and reads/writes the same PostgreSQL database.
@@ -67,6 +67,7 @@ model User {
   email            String           @unique
   emailVerified    DateTime?
   image            String?
+  passwordHash     String?
   role             Role             @default(STUDENT)
   departmentId     String?
   department       Department?      @relation(fields: [departmentId], references: [id])
@@ -127,7 +128,7 @@ model VerificationToken {
 }
 
 // ---------------------------------------------------------------------------
-// Queries — the heart of the system (FR-02, FR-03, FR-04, FR-05, FR-06, FR-07)
+// Queries - the heart of the system (FR-02, FR-03, FR-04, FR-05, FR-06, FR-07)
 // ---------------------------------------------------------------------------
 
 model Query {

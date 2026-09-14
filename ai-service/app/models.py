@@ -1,4 +1,4 @@
-"""SQLAlchemy models — mirror of web/prisma/schema.prisma.
+"""SQLAlchemy models - mirror of web/prisma/schema.prisma.
 
 The web layer owns the schema (created via `prisma db push`); these models
 read and write the same tables. Column names are snake_case (Prisma @map),

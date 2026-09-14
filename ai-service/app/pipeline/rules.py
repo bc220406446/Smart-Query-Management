@@ -55,7 +55,7 @@ def classify_rules(text: str) -> tuple[str, QueryPriority, float]:
     """Classify a query with keywords. Returns (category, priority, confidence)."""
     lowered = text.lower()
 
-    # "general" is the fallback bucket, not a real category — it never scores.
+    # "general" is the fallback bucket, not a real category - it never scores.
     best_category = "general"
     best_score = 0
     for category, keywords in CATEGORY_KEYWORDS.items():

@@ -20,7 +20,7 @@ function makeBaileys(): boolean {
 
 export async function POST() {
   if (!makeBaileys()) {
-    return NextResponse.json({ error: "Baileys unavailable — install @whiskeysockets/baileys" }, { status: 503 });
+    return NextResponse.json({ error: "Baileys unavailable - install @whiskeysockets/baileys" }, { status: 503 });
   }
   try {
     await connectWhatsApp();

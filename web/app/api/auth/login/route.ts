@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid or expired code." }, { status: 401 });
     }
 
-    // OTP verified — ensure a DB user exists and return their id so the client
+    // OTP verified - ensure a DB user exists and return their id so the client
     // can complete sign-in through the NextAuth credentials provider.
     let dbUser = await prisma.user.findUnique({
       where: { email: email.trim().toLowerCase() },

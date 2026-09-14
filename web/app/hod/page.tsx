@@ -83,7 +83,7 @@ export default async function HodConsolePage({
             className="field-select"
             style={{ padding: "6px 28px 6px 10px", fontSize: 12 }}
           >
-            <option value="">— assign —</option>
+            <option value="">- assign -</option>
             {assignees.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name} ({a.role})
@@ -137,7 +137,7 @@ export default async function HodConsolePage({
         <div className="table-wrap">
           {escalated.length === 0 ? (
             <div className="empty-state">
-              <span className="empty-state-icon">🎉</span>
+              <span className="empty-state-icon" aria-hidden="true">-</span>
               No escalated queries.
             </div>
           ) : (
@@ -181,7 +181,7 @@ export default async function HodConsolePage({
                         {q.student?.name ?? "Anonymous"} · escalated{" "}
                         {q.escalatedAt
                           ? new Date(q.escalatedAt).toLocaleString()
-                          : "—"}
+                          : "-"}
                       </p>
                     </div>
                     <StatusBadge status={q.status} />
@@ -201,7 +201,7 @@ export default async function HodConsolePage({
         <div className="table-wrap">
           {openQueries.length === 0 ? (
             <div className="empty-state">
-              <span className="empty-state-icon">📭</span>
+              <span className="empty-state-icon" aria-hidden="true">-</span>
               No open queries.
             </div>
           ) : (

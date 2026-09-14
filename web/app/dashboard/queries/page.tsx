@@ -30,7 +30,7 @@ export default async function MyQueriesPage() {
       <div className="table-wrap">
         {queries.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-state-icon">📋</span>
+            <span className="empty-state-icon" aria-hidden="true">-</span>
             You haven&apos;t submitted any queries yet.{" "}
             <Link href="/dashboard/queries/new" style={{ fontWeight: 600 }}>
               Submit one
@@ -61,7 +61,7 @@ export default async function MyQueriesPage() {
                     </Link>
                   </td>
                   <td style={{ color: "var(--text-secondary)" }}>
-                    {q.assignedTo?.name ?? "—"}
+                    {q.assignedTo?.name ?? "-"}
                   </td>
                   <td>
                     <PriorityBadge priority={q.priority} />

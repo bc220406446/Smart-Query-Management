@@ -1,168 +1,67 @@
-/* Seed script — run with `npm run db:seed`.
-   Creates departments, sample users for every role, and a few demo queries
-   so the dashboards and the AI pipeline have data to work with. Idempotent. */
-import { PrismaClient, QueryChannel, Role } from "@prisma/client";
+import "dotenv/config";
+import { PrismaClient, Role } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { hashPassword } from "../lib/password";
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL ?? process.env.DIRECT_URL;
+if (!connectionString) throw new Error("DATABASE_URL or DIRECT_URL is required.");
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
-const DEPARTMENTS = [
-  { name: "Computer Science", code: "CS" },
-  { name: "Business Administration", code: "BA" },
-  { name: "Electrical Engineering", code: "EE" },
-  { name: "Admissions Office", code: "ADM" },
-  { name: "Examination Department", code: "EXAM" },
-  { name: "Student Affairs", code: "SA" },
+const departments = [
+  ["Computer Sciences", "CS", "cs"], ["Management Sciences", "MGT", "mgt"], ["Economics", "ECO", "eco"],
+  ["Education", "EDU", "edu"], ["English", "ENG", "eng"], ["Mass Communication", "MCM", "masscomm"],
+  ["Islamic Studies", "ISL", "isl"], ["Mathematics", "MTH", "mth"], ["Pakistan Studies", "PAK", "pak"],
+  ["Physics", "PHY", "phy"], ["Psychology", "PSY", "psy"], ["Public Administration", "PAD", "pa"],
+  ["Sociology", "SOC", "soc"], ["Statistics", "STA", "hod-sta"], ["Urdu", "URD", "urd"],
+] as const;
+
+const instructorCodes = departments.map(([, code]) => code);
+const students = [
+  "SCS2601", "SCS2602", "SCS2603", "SCS2604", "SMGT2601", "SMGT2602", "SMGT2603",
+  "SECO2601", "SECO2602", "SECO2603", "SEDU2601", "SEDU2602", "SEDU2603",
+  "SENG2601", "SENG2602", "SENG2603",
 ];
 
-const USERS: Array<{ email: string; name: string; role: Role; departmentCode?: string; isOnLeave?: boolean }> = [
-  // Admin
-  { email: "admin@vu.edu.pk", name: "System Admin", role: Role.ADMIN },
-  // HODs
-  { email: "hod.cs@vu.edu.pk", name: "Dr. Ayesha Khan", role: Role.HOD, departmentCode: "CS" },
-  { email: "hod.admissions@vu.edu.pk", name: "Ms. Fatima Ali", role: Role.HOD, departmentCode: "ADM" },
-  // Instructors
-  { email: "s.raza@vu.edu.pk", name: "Sir Saad Raza", role: Role.INSTRUCTOR, departmentCode: "CS" },
-  { email: "m.tariq@vu.edu.pk", name: "Mr. Muhammad Tariq", role: Role.INSTRUCTOR, departmentCode: "CS", isOnLeave: true },
-  { email: "n.ahmed@vu.edu.pk", name: "Ms. Nida Ahmed", role: Role.INSTRUCTOR, departmentCode: "BA" },
-  // Students
-  { email: "student.demo@vu.edu.pk", name: "Demo Student", role: Role.STUDENT },
-  { email: "ali.hassan@vu.edu.pk", name: "Ali Hassan", role: Role.STUDENT },
-];
-
-async function main() {
-  console.log("Seeding departments…");
-  const deptById = new Map<string, string>();
-  for (const d of DEPARTMENTS) {
-    const row = await prisma.department.upsert({
-      where: { code: d.code },
-      update: { name: d.name },
-      create: d,
-    });
-    deptById.set(d.code, row.id);
-  }
-
-  console.log("Seeding users…");
-  const admin = await prisma.user.upsert({
-    where: { email: "admin@vu.edu.pk" },
-    update: { name: "System Admin", role: Role.ADMIN },
-    create: { email: "admin@vu.edu.pk", name: "System Admin", role: Role.ADMIN },
-  });
-
-  const userIdByEmail = new Map<string, string>([["admin@vu.edu.pk", admin.id]]);
-  for (const u of USERS) {
-    const row = await prisma.user.upsert({
-      where: { email: u.email },
-      update: {
-        name: u.name,
-        role: u.role,
-        departmentId: u.departmentCode ? deptById.get(u.departmentCode) : null,
-        isOnLeave: u.isOnLeave ?? false,
-      },
-      create: {
-        email: u.email,
-        name: u.name,
-        role: u.role,
-        departmentId: u.departmentCode ? deptById.get(u.departmentCode) : null,
-        isOnLeave: u.isOnLeave ?? false,
-      },
-    });
-    userIdByEmail.set(u.email, row.id);
-  }
-
-  console.log("Seeding sample queries…");
-  const csDept = deptById.get("CS")!;
-  const examDept = deptById.get("EXAM")!;
-  const studentId = userIdByEmail.get("student.demo@vu.edu.pk")!;
-  const csHodId = userIdByEmail.get("hod.cs@vu.edu.pk")!;
-  const instructorId = userIdByEmail.get("s.raza@vu.edu.pk")!;
-
-  const sampleQueries = [
-    {
-      id: "seed-q-1",
-      subject: "How do I register for CS302 this semester?",
-      message:
-        "I am a second-semester CS student and I cannot find CS302 in my course registration portal. Could you help me register or tell me who to contact?",
-      channel: QueryChannel.WEB,
-      category: "registration",
-      status: "ROUTED" as const,
-      assignedToId: instructorId,
-      departmentId: csDept,
-    },
-    {
-      id: "seed-q-2",
-      subject: "Missing marks in MGT211 final result",
-      message:
-        "My MGT211 result shows 'incomplete' even though I appeared in the final exam. Please check my paper.",
-      channel: QueryChannel.EMAIL,
-      category: "exam",
-      status: "SUBMITTED" as const,
-      departmentId: examDept,
-    },
-    {
-      id: "seed-q-3",
-      subject: "Fee deadline extension request",
-      message: "I would like to request an extension for the fee payment deadline due to a family emergency.",
-      channel: QueryChannel.WEB,
-      category: "fee",
-      status: "IN_PROGRESS" as const,
-      departmentId: deptById.get("BA")!,
-    },
-  ];
-
-  for (const q of sampleQueries) {
-    await prisma.query.upsert({
-      where: { id: q.id },
-      update: {},
-      create: {
-        id: q.id,
-        subject: q.subject,
-        message: q.message,
-        channel: q.channel,
-        category: q.category,
-        status: q.status,
-        studentId,
-        assignedToId: q.assignedToId ?? null,
-        departmentId: q.departmentId ?? null,
-      },
-    });
-  }
-
-  // A couple of notifications so the bell isn't empty on first login.
-  await prisma.notification.upsert({
-    where: { id: "seed-notif-1" },
-    update: {},
-    create: {
-      id: "seed-notif-1",
-      userId: studentId,
-      type: "announcement",
-      title: "Welcome to the Smart Query Hub",
-      body: "Track all your university queries in one place. Submit a new query any time.",
-    },
-  });
-
-  // An audit log entry for the welcome event.
-  await prisma.auditLog.create({
-    data: {
-      actorId: admin.id,
-      action: "seed",
-      entityType: "system",
-      entityId: "seed",
-      metadata: { note: "Database seeded with demo data" },
-    },
-  });
-
-  console.log("Seed complete. Sample logins:");
-  console.log("  admin@vu.edu.pk   — ADMIN");
-  console.log("  hod.cs@vu.edu.pk  — HOD (CS)");
-  console.log("  s.raza@vu.edu.pk  — INSTRUCTOR (CS)");
-  console.log("  student.demo@vu.edu.pk — STUDENT");
+function displayName(email: string) {
+  return email.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
+async function main() {
+  const passwordHash = await hashPassword("Test@123");
+  const departmentIds = new Map<string, string>();
+
+  console.log("Seeding departments…");
+  for (const [name, code] of departments) {
+    const department = await prisma.department.upsert({ where: { code }, update: { name }, create: { name, code } });
+    departmentIds.set(code, department.id);
+  }
+
+  const users: Array<{ email: string; role: Role; departmentCode?: string }> = [
+    { email: "admin@vu.edu.pk", role: Role.ADMIN },
+    ...departments.map(([, code, contact]) => ({ email: `${contact}@vu.edu.pk`, role: Role.HOD, departmentCode: code })),
+    ...instructorCodes.flatMap((code) => [101, 201, 301, 401, 501, 601, 701].map((course) => ({ email: `${code}${course}.instructor@vu.edu.pk`, role: Role.INSTRUCTOR, departmentCode: code }))),
+    ...students.map((id) => ({ email: `${id}@vu.edu.pk`, role: Role.STUDENT, departmentCode: id.slice(1).match(/^[A-Z]+/)?.[0] })),
+  ];
+
+  await prisma.user.deleteMany({
+    where: { email: { in: ["hod.cs@vu.edu.pk", "hod.admissions@vu.edu.pk", "s.raza@vu.edu.pk", "m.tariq@vu.edu.pk", "n.ahmed@vu.edu.pk", "student.demo@vu.edu.pk", "ali.hassan@vu.edu.pk"] } },
   });
+
+  console.log(`Seeding ${users.length} accounts…`);
+  for (const user of users) {
+    await prisma.user.upsert({
+      where: { email: user.email },
+      update: { name: displayName(user.email), role: user.role, passwordHash, departmentId: user.departmentCode ? departmentIds.get(user.departmentCode) ?? null : null },
+      create: { email: user.email, name: displayName(user.email), role: user.role, passwordHash, departmentId: user.departmentCode ? departmentIds.get(user.departmentCode) ?? null : null },
+    });
+  }
+
+  console.log("Removing previous demo seed records…");
+  await prisma.notification.deleteMany({ where: { id: { startsWith: "seed-" } } });
+  await prisma.auditLog.deleteMany({ where: { entityId: "seed" } });
+  await prisma.query.deleteMany({ where: { id: { startsWith: "seed-" } } });
+
+  console.log("Seed complete. All seeded accounts use password: Test@123");
+}
+
+main().catch((error) => { console.error(error); process.exit(1); }).finally(() => prisma.$disconnect());

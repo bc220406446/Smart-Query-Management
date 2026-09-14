@@ -29,7 +29,10 @@ export default function WhatsAppConsole({ users }: { users: UserEntry[] }) {
   useEffect(() => {
     try {
       const saved = localStorage.getItem("wa-phone-mapping");
-      if (saved) setMapping(JSON.parse(saved));
+      if (saved) {
+        // Restore persisted UI state after the initial browser render.
+        queueMicrotask(() => setMapping(JSON.parse(saved)));
+      }
     } catch {}
   }, []);
 
@@ -110,7 +113,7 @@ export default function WhatsAppConsole({ users }: { users: UserEntry[] }) {
         <div className="page-header-left">
           <h1 className="page-title">WhatsApp Console</h1>
           <p className="page-subtitle">
-            FR-02/FR-08 — wire the Baileys listener, map phones to users, and
+            FR-02/FR-08 - wire the Baileys listener, map phones to users, and
             reply from here.
           </p>
         </div>

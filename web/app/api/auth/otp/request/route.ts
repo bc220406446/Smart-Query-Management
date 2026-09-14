@@ -15,11 +15,11 @@ export async function POST(request: Request) {
 
     const code = await createOtpForEmail(parsed.data.email);
 
-    // Send the OTP via SMTP (Google App Password) — best effort.
+    // Send the OTP via SMTP (Google App Password) - best effort.
     await sendEmailNotification({
       to: parsed.data.email,
       subject: "Your Smart Query Hub login code",
-      html: `<p>Hi there,</p><p>Your one-time login code for the Smart Query Hub is:</p><p style=\"font-size:1.4rem;letter-spacing:4px;font-weight:700;\">${code}</p><p>It expires in 5 minutes. If you did not request this code, you can safely ignore this email.</p><p>— Smart Query Hub</p>`,
+      html: `<p>Hi there,</p><p>Your one-time login code for the Smart Query Hub is:</p><p style=\"font-size:1.4rem;letter-spacing:4px;font-weight:700;\">${code}</p><p>It expires in 5 minutes. If you did not request this code, you can safely ignore this email.</p><p>- Smart Query Hub</p>`,
     });
 
     return NextResponse.json({ ok: true, message: "OTP sent. Check your inbox." });

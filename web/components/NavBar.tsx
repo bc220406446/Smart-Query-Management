@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Role } from "@prisma/client";
 import type { SessionUser } from "@/lib/roles";
 import SignOutButton from "@/components/SignOutButton";
+import BrandMark from "@/components/BrandMark";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const ROLE_LINKS: Record<Role, Array<{ href: string; label: string }>> = {
   [Role.STUDENT]: [
@@ -29,7 +31,7 @@ const ROLE_LINKS: Record<Role, Array<{ href: string; label: string }>> = {
 export default function NavBar({ user }: { user: SessionUser }) {
   const links = ROLE_LINKS[user.role] ?? [];
   return (
-    <header
+    <header className="app-nav"
       style={{
         display: "flex",
         alignItems: "center",
@@ -56,27 +58,11 @@ export default function NavBar({ user }: { user: SessionUser }) {
           textDecoration: "none",
         }}
       >
-        <span
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 28,
-            height: 28,
-            borderRadius: "8px",
-            background: "var(--brand-500)",
-            color: "var(--brand-contrast)",
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.02em",
-          }}
-        >
-          SQ
-        </span>
+        <BrandMark size={30} />
         <span style={{ letterSpacing: "0.01em" }}>Smart Query Hub</span>
       </Link>
 
-      <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <nav className="app-nav-links" style={{ display: "flex", alignItems: "center", gap: 4 }}>
         {links.map((l) => (
           <Link
             key={l.href}
@@ -141,6 +127,7 @@ export default function NavBar({ user }: { user: SessionUser }) {
             </span>
           </span>
           <SignOutButton />
+          <ThemeToggle />
         </span>
       </nav>
     </header>

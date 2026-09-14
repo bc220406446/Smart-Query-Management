@@ -34,7 +34,7 @@ export default async function StaffInboxPage() {
       <div className="table-wrap">
         {queries.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-state-icon">✅</span>
+            <span className="empty-state-icon" aria-hidden="true">-</span>
             No queries assigned to you right now.
           </div>
         ) : (
@@ -70,10 +70,10 @@ export default async function StaffInboxPage() {
                     </Link>
                   </td>
                   <td style={{ color: "var(--text-secondary)" }}>
-                    {q.student?.name ?? "—"}
+                    {q.student?.name ?? "-"}
                   </td>
                   <td style={{ color: "var(--text-secondary)" }}>
-                    {q.department?.name ?? "—"}
+                    {q.department?.name ?? "-"}
                   </td>
                   <td>
                     <PriorityBadge priority={q.priority} />

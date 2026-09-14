@@ -67,7 +67,7 @@ export default async function QueryDetailPage({
       >
         <span>Submitted {new Date(query.createdAt).toLocaleString()}</span>
         <span>
-          Routed to {query.assignedTo?.name ?? "—"} (
+          Routed to {query.assignedTo?.name ?? "-"} (
           {query.department?.name ?? "unassigned"})
         </span>
       </div>
@@ -112,7 +112,7 @@ export default async function QueryDetailPage({
         {query.replies.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "28px 16px" }}>
             <p style={{ color: "var(--text-tertiary)", fontSize: 13 }}>
-              No replies yet. Your query is being handled — you will be notified
+              No replies yet. Your query is being handled - you will be notified
               when there is an update.
             </p>
           </div>

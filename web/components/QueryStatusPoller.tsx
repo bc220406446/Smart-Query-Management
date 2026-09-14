@@ -77,7 +77,7 @@ export default function QueryStatusPoller({
         });
     } catch {
       console.warn("Supabase Realtime subscribe failed; falling back to polling:");
-      setLive(false);
+      queueMicrotask(() => setLive(false));
     }
 
     return () => {
@@ -90,7 +90,7 @@ export default function QueryStatusPoller({
       {live === true
         ? "Live · realtime updates active"
         : live === false
-        ? `Live updates · polling · last checked ${lastChecked ? lastChecked.toLocaleTimeString() : "—"}`
+        ? `Live updates · polling · last checked ${lastChecked ? lastChecked.toLocaleTimeString() : "-"}`
         : "Live updates · connecting…"}
     </p>
   );

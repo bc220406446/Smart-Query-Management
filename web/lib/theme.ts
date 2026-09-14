@@ -20,6 +20,8 @@ export function useTheme() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // The state update intentionally runs after hydration in the browser.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     const stored = (() => {
       try { return localStorage.getItem(THEME_KEY) as Theme | null; } catch { return null; }

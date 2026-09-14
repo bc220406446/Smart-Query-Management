@@ -73,7 +73,7 @@ export default async function DashboardPage() {
           <div className="table-wrap" style={{ padding: 0 }}>
             {myQueries.length === 0 ? (
               <div className="empty-state">
-                <span className="empty-state-icon">📋</span>
+                <span className="empty-state-icon" aria-hidden="true">-</span>
                 Nothing here yet. {isStaff ? "Queries routed to you will appear here." : "Submit a query to get started."}
               </div>
             ) : (

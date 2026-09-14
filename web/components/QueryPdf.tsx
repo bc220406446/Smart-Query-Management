@@ -102,10 +102,10 @@ function PageHeader() {
   return (
     <View style={styles.header}>
       <View>
-        <Text style={styles.title}>Smart Query Hub — Query Report</Text>
+        <Text style={styles.title}>Smart Query Hub - Query Report</Text>
         <Text style={styles.subtitle}>Generated {new Date().toLocaleString()}</Text>
       </View>
-      <Text style={styles.subtitle}>Smart Query Routing &amp; Email Automation System — FYP</Text>
+      <Text style={styles.subtitle}>Smart Query Routing &amp; Email Automation System - FYP</Text>
     </View>
   );
 }
@@ -129,8 +129,8 @@ function QueryRowComponent({ row }: { row: QueryRow }) {
     <View style={styles.row}>
       <Text style={[styles.cell, styles.cellMono]}>#{row.ticketNumber.slice(0, 8)}</Text>
       <Text style={styles.cell}>{row.subject}</Text>
-      <Text style={styles.cell}>{row.student?.name ?? "—"}</Text>
-      <Text style={styles.cell}>{row.department?.name ?? "—"}</Text>
+      <Text style={styles.cell}>{row.student?.name ?? "-"}</Text>
+      <Text style={styles.cell}>{row.department?.name ?? "-"}</Text>
       <View style={styles.cell}>          <View style={[styles.statusBadge, { backgroundColor: statusColor(row.status) + "30", borderColor: statusColor(row.status), borderWidth: 1 }]}>
             <Text style={{ color: statusColor(row.status), fontSize: 7, fontWeight: "bold", textTransform: "uppercase" }}>
               {row.status}

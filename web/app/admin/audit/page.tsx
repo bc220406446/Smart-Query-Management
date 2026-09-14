@@ -17,14 +17,14 @@ export default async function AuditLogPage() {
       <div className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">Audit Log</h1>
-          <p className="page-subtitle">FR-14 — every state change, reassignment, and override.</p>
+          <p className="page-subtitle">FR-14 - every state change, reassignment, and override.</p>
         </div>
       </div>
 
       <div className="table-wrap">
         {logs.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-state-icon">📝</span>
+            <span className="empty-state-icon" aria-hidden="true">-</span>
             No activity recorded yet.
           </div>
         ) : (

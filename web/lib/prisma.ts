@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-// Prisma client singleton — avoids exhausting connections in dev hot-reload.
+// Prisma client singleton - avoids exhausting connections in dev hot-reload.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 const connectionString = process.env.DATABASE_URL;

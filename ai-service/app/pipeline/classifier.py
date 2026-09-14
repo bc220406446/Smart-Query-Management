@@ -2,10 +2,10 @@
 
 Provider chain, LangChain-style orchestration:
 
-1. Gemini (google-genai SDK, optionally wrapped by LangChain) — fast + cheap.
-2. Claude (anthropic SDK) — used when Gemini output is low-confidence/ambiguous
+1. Gemini (google-genai SDK, optionally wrapped by LangChain) - fast + cheap.
+2. Claude (anthropic SDK) - used when Gemini output is low-confidence/ambiguous
    or unavailable.
-3. Rule-based keyword classifier — always available; keeps the system fully
+3. Rule-based keyword classifier - always available; keeps the system fully
    functional without API keys (local dev, CI, demos).
 
 Each provider is optional: the SDK import happens lazily inside the provider's
@@ -86,7 +86,7 @@ class GeminiProvider:
             else:
                 return None
             return _to_result(raw, provider="gemini")
-        except Exception as exc:  # noqa: BLE001 — fall back on any provider error
+        except Exception as exc:  # noqa: BLE001 - fall back on any provider error
             logger.warning("Gemini classification failed: %s", exc)
             return None
 
@@ -158,7 +158,7 @@ def classify_text(text: str) -> ClassificationResult:
         if result and result.confidence >= 0.7:
             return result
         if result:
-            logger.info("Gemini confidence %.2f — consulting Claude.", result.confidence)
+            logger.info("Gemini confidence %.2f - consulting Claude.", result.confidence)
         if claude.available:
             claude_result = claude.classify(text)
             if claude_result:

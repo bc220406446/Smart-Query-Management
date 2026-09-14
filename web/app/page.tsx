@@ -1,137 +1,59 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import SignInButton from "@/components/SignInButton";
+
+const capabilities = [
+  { number: "01", title: "Intelligent routing", body: "Understand every request, identify its urgency, and send it to the right team automatically." },
+  { number: "02", title: "A clear path to resolution", body: "Give students visibility at every stage, from submission to response and resolution." },
+  { number: "03", title: "Faster work for teams", body: "Give staff context-rich drafts and a focused workspace for the conversations that matter." },
+];
 
 export default async function Home() {
   const session = await auth();
   if (session?.user) redirect("/dashboard");
 
-  const features = [
-    {
-      title: "AI routing",
-      body: "Gemini + Claude classify intent and urgency, then route to the right department or instructor automatically.",
-    },
-    {
-      title: "Live status tracking",
-      body: "Every query shows its current stage in real time, with automatic escalation if nothing happens in 24 hours.",
-    },
-    {
-      title: "Draft replies for staff",
-      body: "Staff review and send AI-drafted replies instead of writing every response from scratch.",
-    },
-  ];
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      {/* Top bar */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 24px",
-          height: 56,
-          background: "var(--bg-elevated)",
-          borderBottom: "1px solid var(--border-light)",
-          boxShadow: "var(--shadow-xs)",
-        }}
-      >
-        <a
-          href="/dashboard"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            fontSize: 15,
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            textDecoration: "none",
-          }}
-        >
-          <span
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              background: "var(--brand-500)",
-              color: "var(--brand-contrast)",
-              fontSize: 12,
-              fontWeight: 700,
-            }}
-          >
-            SQ
-          </span>
-          Smart Query Hub
-        </a>
-        <SignInButton />
+    <main className="landing-page">
+      <header className="landing-header">
+        <Link href="/" className="landing-brand" aria-label="Smart Query Hub home">
+          <span className="landing-mark">SQ</span><span>Smart Query Hub</span>
+        </Link>
+        <Link href="/login" className="landing-header-link">Get started <span aria-hidden="true">↗</span></Link>
       </header>
 
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", padding: "64px 24px 40px", textAlign: "center" }}>
-        <div style={{ width: "100%", maxWidth: 760 }}>
-          <h1
-            style={{
-              fontSize: 42,
-              fontWeight: 700,
-              color: "var(--text-primary)",
-              letterSpacing: "-0.02em",
-              lineHeight: 1.1,
-              margin: "0 auto 16px",
-            }}
-          >
-            One inbox for every university query.
-          </h1>
-          <p style={{ fontSize: 17, color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 auto 36px", maxWidth: 540 }}>
-            Submit a question to any department, let AI classify and route it to the
-            right person, and track it to resolution — from a single dashboard.
-          </p>
-
-          <SignInButton callbackUrl="/dashboard" />
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap: 16,
-              marginTop: 56,
-            }}
-          >
-            {features.map((f) => (
-              <div
-                key={f.title}
-                style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border-light)",
-                  borderRadius: "var(--radius-lg)",
-                  padding: "22px 20px",
-                  boxShadow: "var(--shadow-xs)",
-                  textAlign: "left",
-                }}
-              >
-                <h2 style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
-                  {f.title}
-                </h2>
-                <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>{f.body}</p>
-              </div>
-            ))}
+      <section className="landing-hero">
+        <div className="landing-hero-copy">
+          <p className="landing-eyebrow"><span />A better way to be heard</p>
+          <h1>Every question deserves a clear answer.</h1>
+          <p className="landing-lede">Smart Query Hub brings student questions and university teams into one thoughtful, transparent workflow-so nothing gets lost and everyone knows what happens next.</p>
+          <div className="landing-actions">
+            <Link href="/login" className="landing-primary-action">Get started <span aria-hidden="true">→</span></Link>
+            <span className="landing-action-note">Simple for students. Powerful for teams.</span>
           </div>
         </div>
-      </main>
 
-      <footer
-        style={{
-          marginTop: "auto",
-          padding: "16px 24px",
-          borderTop: "1px solid var(--border-light)",
-          textAlign: "center",
-          fontSize: 11,
-          color: "var(--text-tertiary)",
-        }}
-      >
-        Smart Query Routing &amp; Email Automation System — FYP (supervisor: Saima Jamil)
-      </footer>
-    </div>
+        <div className="landing-visual" aria-label="Query workflow preview">
+          <div className="landing-orbit landing-orbit-one" /><div className="landing-orbit landing-orbit-two" />
+          <div className="landing-preview-card">
+            <div className="landing-preview-topline"><span className="landing-status-dot" /><span>Query workspace</span><span className="landing-preview-menu">•••</span></div>
+            <div className="landing-preview-title">Where can I find my course schedule?</div>
+            <div className="landing-preview-meta">Academic services <span>·</span> Submitted moments ago</div>
+            <div className="landing-progress"><span /></div>
+            <div className="landing-preview-bottom"><span className="landing-pill">Classifying</span><span className="landing-avatar">AS</span></div>
+          </div>
+          <div className="landing-floating-card landing-floating-top"><span className="landing-mini-icon">✦</span><span><strong>Smart routing</strong><small>Academic services</small></span></div>
+          <div className="landing-floating-card landing-floating-bottom"><span className="landing-check">✓</span><span><strong>Clear next steps</strong><small>Keep everyone informed</small></span></div>
+        </div>
+      </section>
+
+      <section className="landing-trust-row"><span>BUILT FOR BETTER COMMUNICATION</span><span>ONE SHARED WORKSPACE</span><span>DESIGNED AROUND PEOPLE</span></section>
+
+      <section className="landing-capabilities">
+        <div className="landing-section-intro"><p className="landing-eyebrow"><span />Everything in one place</p><h2>From first question to final resolution.</h2></div>
+        <div className="landing-capability-grid">
+          {capabilities.map((item) => <article key={item.number} className="landing-capability"><span className="landing-capability-number">{item.number}</span><h3>{item.title}</h3><p>{item.body}</p></article>)}
+        </div>
+      </section>
+    </main>
   );
 }

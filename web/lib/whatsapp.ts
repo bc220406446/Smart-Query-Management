@@ -33,7 +33,7 @@ export function setBaileysMaker(maker: BaileysMaker) {
 
 /** Connect (or reconnect) the WhatsApp socket. Returns once connected. */
 export async function connectWhatsApp(pushName = "SmartQueryHub") {
-  if (!_maker) throw new Error("Baileys maker not configured — call setBaileysMaker first.");
+  if (!_maker) throw new Error("Baileys maker not configured - call setBaileysMaker first.");
   if (_inst && _inst.ev?.isConnected?.()) return _ready!;
 
   const inst = await _maker({
@@ -110,7 +110,7 @@ export async function createQueryFromWhatsApp(
     studentId?: string | null;
   }) => Promise<{ id: string; ticketNumber: string }>
 ) {
-  // Phone number from `from` — strip leading "+" if present.
+  // Phone number from `from` - strip leading "+" if present.
   const phoneRaw = body.from.includes("@") ? body.from : body.from.replace(/^\+/, "");
   // If it is a group, ignore (handled above in isUserTextMessage).
   const studentId = studentUserIds[phoneRaw] ?? null;

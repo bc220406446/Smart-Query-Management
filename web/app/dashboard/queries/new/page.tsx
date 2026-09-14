@@ -58,7 +58,7 @@ export default async function NewQueryPage({
               minLength={20}
               maxLength={5000}
               rows={10}
-              placeholder="Describe your query in detail — the more context, the better the AI routing."
+              placeholder="Describe your query in detail - the more context, the better the AI routing."
               className="field-textarea"
             />
           </div>

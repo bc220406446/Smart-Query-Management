@@ -22,7 +22,7 @@ export default async function AnnouncementsPage({
       <div className="page-header">
         <div className="page-header-left">
           <h1 className="page-title">Announcements</h1>
-          <p className="page-subtitle">FR-11 — broadcast a message to every student dashboard.</p>
+          <p className="page-subtitle">FR-11 - broadcast a message to every student dashboard.</p>
         </div>
       </div>
 
