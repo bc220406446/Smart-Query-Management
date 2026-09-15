@@ -1,135 +1,26 @@
 import Link from "next/link";
+import { BarChart3, Bell, ClipboardList, FilePlus2, Inbox, LayoutDashboard, Megaphone, Settings2, ShieldCheck } from "lucide-react";
 import { Role } from "@prisma/client";
 import type { SessionUser } from "@/lib/roles";
 import SignOutButton from "@/components/SignOutButton";
 import BrandMark from "@/components/BrandMark";
 import ThemeToggle from "@/components/ThemeToggle";
 
-const ROLE_LINKS: Record<Role, Array<{ href: string; label: string }>> = {
-  [Role.STUDENT]: [
-    { href: "/dashboard", label: "Overview" },
-    { href: "/dashboard/queries", label: "My Queries" },
-    { href: "/dashboard/queries/new", label: "New Query" },
-  ],
-  [Role.INSTRUCTOR]: [
-    { href: "/dashboard", label: "Overview" },
-    { href: "/staff/inbox", label: "Inbox" },
-  ],
-  [Role.HOD]: [
-    { href: "/dashboard", label: "Overview" },
-    { href: "/staff/inbox", label: "Inbox" },
-    { href: "/hod", label: "HOD Console" },
-  ],
-  [Role.ADMIN]: [
-    { href: "/dashboard", label: "Overview" },
-    { href: "/admin", label: "Analytics" },
-    { href: "/admin/announcements", label: "Announcements" },
-    { href: "/admin/audit", label: "Audit Log" },
-  ],
+const ROLE_LINKS: Record<Role, Array<{ href: string; label: string; icon: typeof LayoutDashboard }>> = {
+  [Role.STUDENT]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/dashboard/queries", label: "My Queries", icon: ClipboardList }, { href: "/dashboard/queries/new", label: "New Query", icon: FilePlus2 }],
+  [Role.INSTRUCTOR]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/staff/inbox", label: "Inbox", icon: Inbox }],
+  [Role.HOD]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/staff/inbox", label: "Inbox", icon: Inbox }, { href: "/hod", label: "HOD Console", icon: ShieldCheck }],
+  [Role.ADMIN]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/admin", label: "Analytics", icon: BarChart3 }, { href: "/admin/announcements", label: "Announcements", icon: Megaphone }, { href: "/admin/audit", label: "Audit Log", icon: Settings2 }],
 };
 
 export default function NavBar({ user }: { user: SessionUser }) {
   const links = ROLE_LINKS[user.role] ?? [];
-  return (
-    <header className="app-nav"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "0 24px",
-        height: "56px",
-        background: "var(--bg-elevated)",
-        borderBottom: "1px solid var(--border-light)",
-        boxShadow: "var(--shadow-xs)",
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-      }}
-    >
-      <Link
-        href="/dashboard"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          fontSize: "15px",
-          fontWeight: 600,
-          color: "var(--text-primary)",
-          textDecoration: "none",
-        }}
-      >
-        <BrandMark size={30} />
-        <span style={{ letterSpacing: "0.01em" }}>Smart Query Hub</span>
-      </Link>
-
-      <nav className="app-nav-links" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        {links.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className="nav-link"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              padding: "7px 12px",
-              fontSize: 13,
-              fontWeight: 500,
-              color: "var(--text-secondary)",
-              borderRadius: "8px",
-              textDecoration: "none",
-              transition: "background 0.15s ease, color 0.15s ease",
-            }}
-          >
-            {l.label}
-          </Link>
-        ))}
-        <span
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            marginLeft: 16,
-            paddingLeft: 16,
-            borderLeft: "1px solid var(--border-light)",
-          }}
-        >
-          <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--text-secondary)" }}>
-            <span style={{ lineHeight: 1.4 }}>{user.name ?? user.email}</span>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "2px 8px",
-                borderRadius: "20px",
-                background: `${user.role === "ADMIN" ? "var(--brand-50)" : user.role === "HOD" ? "var(--warning-bg)" : user.role === "INSTRUCTOR" ? "var(--info-bg)" : "var(--bg-muted)"}`,
-                border: "1px solid " + (user.role === "ADMIN"
-                  ? "var(--brand-100)"
-                  : user.role === "HOD"
-                  ? "var(--warning-border)"
-                  : user.role === "INSTRUCTOR"
-                  ? "var(--info-border)"
-                  : "var(--border-light)"),
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                color:
-                  user.role === "ADMIN"
-                    ? "var(--brand-700)"
-                    : user.role === "HOD"
-                    ? "var(--warning)"
-                    : user.role === "INSTRUCTOR"
-                    ? "var(--info)"
-                    : "var(--text-tertiary)",
-              }}
-            >
-              {user.role}
-            </span>
-          </span>
-          <SignOutButton />
-          <ThemeToggle />
-        </span>
-      </nav>
-    </header>
-  );
+  const displayName = user.name ?? user.email ?? "Account";
+  return <aside className="app-sidebar">
+    <div className="app-sidebar-top"><Link href="/dashboard" className="app-sidebar-brand"><BrandMark size={34} /><span>Smart Query Hub</span></Link><ThemeToggle /></div>
+    <div className="app-sidebar-section-label">Workspace</div>
+    <nav className="app-sidebar-nav" aria-label="Workspace navigation">{links.map(({ href, label, icon: Icon }) => <Link key={href} href={href} className="app-sidebar-link"><Icon size={17} aria-hidden="true" /><span>{label}</span></Link>)}</nav>
+    <div className="app-sidebar-spacer" />
+    <div className="app-sidebar-profile"><div className="app-sidebar-avatar">{displayName.slice(0, 1).toUpperCase()}</div><div className="app-sidebar-user"><strong>{displayName.includes("@") ? displayName.split("@")[0] : displayName}</strong><span>{user.role}</span></div><SignOutButton /></div>
+  </aside>;
 }

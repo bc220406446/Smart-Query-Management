@@ -7,12 +7,14 @@ interface AuthLayoutProps {
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  bare?: boolean;
 }
 
 export default function AuthLayout({
   title,
   subtitle,
   children,
+  bare = false,
 }: AuthLayoutProps) {
   return (
     <div className="auth-shell">
@@ -20,7 +22,8 @@ export default function AuthLayout({
         <div className="auth-topbar"><Link href="/" className="auth-brand"><BrandMark size={42} /><span>Smart Query Hub</span></Link><ThemeToggle /></div>
 
         <div
-          className="animate-fade-slide"
+          data-auth-card={!bare}
+          className={`auth-card animate-fade-slide${bare ? " auth-card-bare" : ""}`}
           style={{
             background: "var(--bg-elevated)",
             border: "1px solid var(--border-light)",
@@ -29,12 +32,12 @@ export default function AuthLayout({
             padding: "32px 28px",
           }}
         >
-          <h1 style={{ fontSize: 22, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4, letterSpacing: "-0.01em" }}>
+          {!bare && <><p className="auth-kicker">SMART QUERY HUB</p><h1 className="auth-card-title">
             {title}
           </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 20, lineHeight: 1.5 }}>
+          <p className="auth-card-subtitle">
             {subtitle}
-          </p>
+          </p></>}
 
           {children}
 

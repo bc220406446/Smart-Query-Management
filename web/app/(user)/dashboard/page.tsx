@@ -59,14 +59,14 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      <div className="stats-grid">
+      <div className="stats-grid dashboard-stat-grid">
         {statCards(isStaff ? "Assigned open" : "Open queries", openCount)}
         {statCards(isStaff ? "Assigned resolved" : "Resolved", resolvedCount)}
         {statCards("Announcements", announcements.length)}
       </div>
 
-      <div className="grid-3" style={{ marginTop: 28 }}>
-        <section>
+      <div className="dashboard-sections">
+        <section className="dashboard-full-section">
           <h3 style={{ marginBottom: 16 }}>
             {isStaff ? "Recently assigned" : "Recent queries"}
           </h3>
@@ -77,42 +77,28 @@ export default async function DashboardPage() {
                 Nothing here yet. {isStaff ? "Queries routed to you will appear here." : "Submit a query to get started."}
               </div>
             ) : (
-              <ul style={{ listStyle: "none", margin: 0, padding: "8px 0" }}>
-                {myQueries.map((q) => (
-                  <li
-                    key={q.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      padding: "12px 14px",
-                      borderBottom: "1px solid var(--border-light)",
-                    }}
-                  >
-                    <Link
-                      href={isStaff ? `/staff/queries/${q.id}` : `/dashboard/queries/${q.id}`}
-                      className="table-link"
-                      style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}
-                    >
-                      <span style={{ fontWeight: 500, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {q.subject}
-                      </span>
-                      <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                        {new Date(q.createdAt).toLocaleString()}
-                        {q.assignedTo?.name ? ` · ${q.assignedTo.name}` : ""}
-                        {q.department?.name ? ` · ${q.department.name}` : ""}
-                      </span>
-                    </Link>
-                    <StatusBadge status={q.status} />
-                  </li>
-                ))}
-              </ul>
+              <table className="table table-stripe dashboard-recent-table">
+                <thead><tr><th>Subject</th><th>Submitted date</th><th>Time</th><th>Assigned to</th><th>Status</th></tr></thead>
+                <tbody>
+                  {myQueries.map((q) => {
+                    const submitted = new Date(q.createdAt);
+                    return (
+                      <tr key={q.id}>
+                        <td><Link href={isStaff ? `/staff/queries/${q.id}` : `/dashboard/queries/${q.id}`} className="table-link">{q.subject}</Link></td>
+                        <td>{submitted.toLocaleDateString()}</td>
+                        <td>{submitted.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</td>
+                        <td>{q.assignedTo?.name ?? "Unassigned"}</td>
+                        <td><StatusBadge status={q.status} /></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
         </section>
 
-        <section style={{ marginTop: 0 }}>
+        <section className="dashboard-full-section">
           <h3 style={{ marginBottom: 16 }}>Announcements</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {announcements.length === 0 ? (
@@ -136,3 +122,5 @@ export default async function DashboardPage() {
     </main>
   );
 }
+
+
