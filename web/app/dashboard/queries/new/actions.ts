@@ -41,5 +41,17 @@ export async function submitQuery(formData: FormData): Promise<void> {
     metadata: { channel: query.channel },
   });
 
+  // Start AI processing immediately. The scheduler remains the retry/fallback
+  // path when the AI service is temporarily unavailable.
+  const aiServiceUrl = process.env.AI_SERVICE_URL ?? "http://localhost:8000";
+  void fetch(`${aiServiceUrl.replace(/\/$/, "")}/queries/process`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ limit: 10 }),
+    signal: AbortSignal.timeout(2_000),
+  }).catch((error) => {
+    console.warn("AI processing trigger unavailable; scheduler will retry:", error);
+  });
+
   redirect(`/dashboard/queries/${query.id}?submitted=1`);
 }

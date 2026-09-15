@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Optional callback to the Next.js webhook with classification results.
     ai_webhook_url: str = ""
     ai_webhook_secret: str = ""
+    # Web submission trigger / pending-query safety net.
+    query_processing_poll_seconds: int = 30
+    query_processing_batch_size: int = 10
 
     # FR-07: hours a query may stay unresolved before auto-escalation.
     escalation_hours: int = 24

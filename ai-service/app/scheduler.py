@@ -11,7 +11,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.config import settings
 from app.database import SessionLocal
-from app.service import gmail_poll_for_emails, run_escalation
+from app.service import gmail_poll_for_emails, process_pending_queries, run_escalation
 
 logger = logging.getLogger(__name__)
 
@@ -46,13 +46,33 @@ def _email_ingestion_job() -> None:
         db.close()
 
 
+def _query_processing_job() -> None:
+    db = SessionLocal()
+    try:
+        processed = process_pending_queries(db, limit=settings.query_processing_batch_size)
+        if processed:
+            logger.info("Automatically processed %d pending queries.", len(processed))
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Query processing job failed: %s", exc)
+    finally:
+        db.close()
+
+
 def start_scheduler() -> BackgroundScheduler:
     """Start the background scheduler. Disabled when poll interval is 0."""
     global _scheduler
-    if _scheduler is not None or settings.escalation_poll_minutes <= 0:
+    if _scheduler is not None or (settings.escalation_poll_minutes <= 0 and settings.query_processing_poll_seconds <= 0):
         return _scheduler  # type: ignore[return-value]
 
     _scheduler = BackgroundScheduler(timezone="UTC", daemon=True)
+    _scheduler.add_job(
+        _query_processing_job,
+        trigger=IntervalTrigger(seconds=max(30, settings.query_processing_poll_seconds)),
+        id="query_processing",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
     _scheduler.add_job(
         _escalation_job,
         trigger=IntervalTrigger(minutes=settings.escalation_poll_minutes),

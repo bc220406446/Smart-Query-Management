@@ -43,16 +43,20 @@ async function main() {
     ...students.map((id) => ({ email: `${id}@vu.edu.pk`, role: Role.STUDENT, departmentCode: id.slice(1).match(/^[A-Z]+/)?.[0] })),
   ];
 
+  const legacyCasedEmails = users.map((user) => user.email).filter((email) => email !== email.toLowerCase());
+  await prisma.user.deleteMany({ where: { email: { in: legacyCasedEmails } } });
+
   await prisma.user.deleteMany({
     where: { email: { in: ["hod.cs@vu.edu.pk", "hod.admissions@vu.edu.pk", "s.raza@vu.edu.pk", "m.tariq@vu.edu.pk", "n.ahmed@vu.edu.pk", "student.demo@vu.edu.pk", "ali.hassan@vu.edu.pk"] } },
   });
 
   console.log(`Seeding ${users.length} accounts…`);
   for (const user of users) {
+    const email = user.email.toLowerCase();
     await prisma.user.upsert({
-      where: { email: user.email },
-      update: { name: displayName(user.email), role: user.role, passwordHash, departmentId: user.departmentCode ? departmentIds.get(user.departmentCode) ?? null : null },
-      create: { email: user.email, name: displayName(user.email), role: user.role, passwordHash, departmentId: user.departmentCode ? departmentIds.get(user.departmentCode) ?? null : null },
+      where: { email },
+      update: { name: displayName(email), role: user.role, passwordHash, departmentId: user.departmentCode ? departmentIds.get(user.departmentCode) ?? null : null },
+      create: { email, name: displayName(email), role: user.role, passwordHash, departmentId: user.departmentCode ? departmentIds.get(user.departmentCode) ?? null : null },
     });
   }
 
