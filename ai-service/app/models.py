@@ -99,6 +99,7 @@ class User(Base):
     department_id: Mapped[Optional[str]] = mapped_column(
         "departmentId", ForeignKey("departments.id", ondelete="SET NULL"), index=True
     )
+    hod_id: Mapped[Optional[str]] = mapped_column("hodId", ForeignKey("users.id", ondelete="SET NULL"), index=True)
     is_on_leave: Mapped[bool] = mapped_column("isOnLeave", Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column("createdAt", DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column("updatedAt", DateTime(timezone=True))
@@ -110,6 +111,8 @@ class User(Base):
     assigned_queries: Mapped[list["Query"]] = relationship(
         back_populates="assigned_to", foreign_keys="Query.assigned_to_id"
     )
+    hod: Mapped[Optional["User"]] = relationship(remote_side=[id], foreign_keys=[hod_id], back_populates="staff")
+    staff: Mapped[list["User"]] = relationship(foreign_keys=[hod_id], back_populates="hod")
 
 
 class Query(Base):

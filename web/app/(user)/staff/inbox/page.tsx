@@ -10,9 +10,7 @@ export default async function StaffInboxPage() {
   const user = await requireRole([...STAFF_ROLES]);
 
   const queries = await prisma.query.findMany({
-    where: {
-      OR: [{ assignedToId: user.id }, { status: "ESCALATED" }],
-    },
+    where: user.role === "ADMIN" ? { OR: [{ assignedToId: user.id }, { status: "ESCALATED" }] } : user.role === "HOD" ? { OR: [{ assignedToId: user.id }, { status: "ESCALATED", assignedTo: { hodId: user.id } }] } : { assignedToId: user.id },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     include: {
       student: { select: { name: true } },

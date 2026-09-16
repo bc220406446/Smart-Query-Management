@@ -1,0 +1,155 @@
+Name,Email,Role,HOD Email Relation
+Admin,admin@vu.edu.pk,ADMIN,
+HOD Admissions,admissions.hod@vu.edu.pk,HOD,
+HOD Finance,finance.hod@vu.edu.pk,HOD,
+HOD Examinations,examinations.hod@vu.edu.pk,HOD,
+HOD Technical Support,technical.hod@vu.edu.pk,HOD,
+HOD Administration,administration.hod@vu.edu.pk,HOD,
+HOD Registrar,registrar.hod@vu.edu.pk,HOD,
+HOD Computer Science,cs.hod@vu.edu.pk,HOD,
+HOD Management,mgt.hod@vu.edu.pk,HOD,
+HOD Economics,eco.hod@vu.edu.pk,HOD,
+HOD Education,edu.hod@vu.edu.pk,HOD,
+HOD English,eng.hod@vu.edu.pk,HOD,
+HOD Mass Communication,masscomm.hod@vu.edu.pk,HOD,
+HOD Islamic Studies,isl.hod@vu.edu.pk,HOD,
+HOD Mathematics,mth.hod@vu.edu.pk,HOD,
+HOD Pakistan Studies,pak.hod@vu.edu.pk,HOD,
+HOD Physics,phy.hod@vu.edu.pk,HOD,
+HOD Psychology,psy.hod@vu.edu.pk,HOD,
+HOD Public Administration,pa.hod@vu.edu.pk,HOD,
+HOD Sociology,soc.hod@vu.edu.pk,HOD,
+HOD Statistics,sta.hod@vu.edu.pk,HOD,
+HOD Urdu,urd.hod@vu.edu.pk,HOD,
+Cs101 Instructor,cs101.instructor@vu.edu.pk,STAFF,cs.hod@vu.edu.pk
+Cs201 Instructor,cs201.instructor@vu.edu.pk,STAFF,cs.hod@vu.edu.pk
+Cs301 Instructor,cs301.instructor@vu.edu.pk,STAFF,cs.hod@vu.edu.pk
+Cs401 Instructor,cs401.instructor@vu.edu.pk,STAFF,cs.hod@vu.edu.pk
+Cs501 Instructor,cs501.instructor@vu.edu.pk,STAFF,cs.hod@vu.edu.pk
+Cs601 Instructor,cs601.instructor@vu.edu.pk,STAFF,cs.hod@vu.edu.pk
+Cs701 Instructor,cs701.instructor@vu.edu.pk,STAFF,cs.hod@vu.edu.pk
+Mgt101 Instructor,mgt101.instructor@vu.edu.pk,STAFF,mgt.hod@vu.edu.pk
+Mgt201 Instructor,mgt201.instructor@vu.edu.pk,STAFF,mgt.hod@vu.edu.pk
+Mgt301 Instructor,mgt301.instructor@vu.edu.pk,STAFF,mgt.hod@vu.edu.pk
+Mgt401 Instructor,mgt401.instructor@vu.edu.pk,STAFF,mgt.hod@vu.edu.pk
+Mgt501 Instructor,mgt501.instructor@vu.edu.pk,STAFF,mgt.hod@vu.edu.pk
+Mgt601 Instructor,mgt601.instructor@vu.edu.pk,STAFF,mgt.hod@vu.edu.pk
+Mgt701 Instructor,mgt701.instructor@vu.edu.pk,STAFF,mgt.hod@vu.edu.pk
+Eco101 Instructor,eco101.instructor@vu.edu.pk,STAFF,eco.hod@vu.edu.pk
+Eco201 Instructor,eco201.instructor@vu.edu.pk,STAFF,eco.hod@vu.edu.pk
+Eco301 Instructor,eco301.instructor@vu.edu.pk,STAFF,eco.hod@vu.edu.pk
+Eco401 Instructor,eco401.instructor@vu.edu.pk,STAFF,eco.hod@vu.edu.pk
+Eco501 Instructor,eco501.instructor@vu.edu.pk,STAFF,eco.hod@vu.edu.pk
+Eco601 Instructor,eco601.instructor@vu.edu.pk,STAFF,eco.hod@vu.edu.pk
+Eco701 Instructor,eco701.instructor@vu.edu.pk,STAFF,eco.hod@vu.edu.pk
+Edu101 Instructor,edu101.instructor@vu.edu.pk,STAFF,edu.hod@vu.edu.pk
+Edu201 Instructor,edu201.instructor@vu.edu.pk,STAFF,edu.hod@vu.edu.pk
+Edu301 Instructor,edu301.instructor@vu.edu.pk,STAFF,edu.hod@vu.edu.pk
+Edu401 Instructor,edu401.instructor@vu.edu.pk,STAFF,edu.hod@vu.edu.pk
+Edu501 Instructor,edu501.instructor@vu.edu.pk,STAFF,edu.hod@vu.edu.pk
+Edu601 Instructor,edu601.instructor@vu.edu.pk,STAFF,edu.hod@vu.edu.pk
+Edu701 Instructor,edu701.instructor@vu.edu.pk,STAFF,edu.hod@vu.edu.pk
+Eng101 Instructor,eng101.instructor@vu.edu.pk,STAFF,eng.hod@vu.edu.pk
+Eng201 Instructor,eng201.instructor@vu.edu.pk,STAFF,eng.hod@vu.edu.pk
+Eng301 Instructor,eng301.instructor@vu.edu.pk,STAFF,eng.hod@vu.edu.pk
+Eng401 Instructor,eng401.instructor@vu.edu.pk,STAFF,eng.hod@vu.edu.pk
+Eng501 Instructor,eng501.instructor@vu.edu.pk,STAFF,eng.hod@vu.edu.pk
+Eng601 Instructor,eng601.instructor@vu.edu.pk,STAFF,eng.hod@vu.edu.pk
+Eng701 Instructor,eng701.instructor@vu.edu.pk,STAFF,eng.hod@vu.edu.pk
+Mcm101 Instructor,mcm101.instructor@vu.edu.pk,STAFF,masscomm.hod@vu.edu.pk
+Mcm201 Instructor,mcm201.instructor@vu.edu.pk,STAFF,masscomm.hod@vu.edu.pk
+Mcm301 Instructor,mcm301.instructor@vu.edu.pk,STAFF,masscomm.hod@vu.edu.pk
+Mcm401 Instructor,mcm401.instructor@vu.edu.pk,STAFF,masscomm.hod@vu.edu.pk
+Mcm501 Instructor,mcm501.instructor@vu.edu.pk,STAFF,masscomm.hod@vu.edu.pk
+Mcm601 Instructor,mcm601.instructor@vu.edu.pk,STAFF,masscomm.hod@vu.edu.pk
+Mcm701 Instructor,mcm701.instructor@vu.edu.pk,STAFF,masscomm.hod@vu.edu.pk
+Isl101 Instructor,isl101.instructor@vu.edu.pk,STAFF,isl.hod@vu.edu.pk
+Isl201 Instructor,isl201.instructor@vu.edu.pk,STAFF,isl.hod@vu.edu.pk
+Isl301 Instructor,isl301.instructor@vu.edu.pk,STAFF,isl.hod@vu.edu.pk
+Isl401 Instructor,isl401.instructor@vu.edu.pk,STAFF,isl.hod@vu.edu.pk
+Isl501 Instructor,isl501.instructor@vu.edu.pk,STAFF,isl.hod@vu.edu.pk
+Isl601 Instructor,isl601.instructor@vu.edu.pk,STAFF,isl.hod@vu.edu.pk
+Isl701 Instructor,isl701.instructor@vu.edu.pk,STAFF,isl.hod@vu.edu.pk
+Mth101 Instructor,mth101.instructor@vu.edu.pk,STAFF,mth.hod@vu.edu.pk
+Mth201 Instructor,mth201.instructor@vu.edu.pk,STAFF,mth.hod@vu.edu.pk
+Mth301 Instructor,mth301.instructor@vu.edu.pk,STAFF,mth.hod@vu.edu.pk
+Mth401 Instructor,mth401.instructor@vu.edu.pk,STAFF,mth.hod@vu.edu.pk
+Mth501 Instructor,mth501.instructor@vu.edu.pk,STAFF,mth.hod@vu.edu.pk
+Mth601 Instructor,mth601.instructor@vu.edu.pk,STAFF,mth.hod@vu.edu.pk
+Mth701 Instructor,mth701.instructor@vu.edu.pk,STAFF,mth.hod@vu.edu.pk
+Pak101 Instructor,pak101.instructor@vu.edu.pk,STAFF,pak.hod@vu.edu.pk
+Pak201 Instructor,pak201.instructor@vu.edu.pk,STAFF,pak.hod@vu.edu.pk
+Pak301 Instructor,pak301.instructor@vu.edu.pk,STAFF,pak.hod@vu.edu.pk
+Pak401 Instructor,pak401.instructor@vu.edu.pk,STAFF,pak.hod@vu.edu.pk
+Pak501 Instructor,pak501.instructor@vu.edu.pk,STAFF,pak.hod@vu.edu.pk
+Pak601 Instructor,pak601.instructor@vu.edu.pk,STAFF,pak.hod@vu.edu.pk
+Pak701 Instructor,pak701.instructor@vu.edu.pk,STAFF,pak.hod@vu.edu.pk
+Phy101 Instructor,phy101.instructor@vu.edu.pk,STAFF,phy.hod@vu.edu.pk
+Phy201 Instructor,phy201.instructor@vu.edu.pk,STAFF,phy.hod@vu.edu.pk
+Phy301 Instructor,phy301.instructor@vu.edu.pk,STAFF,phy.hod@vu.edu.pk
+Phy401 Instructor,phy401.instructor@vu.edu.pk,STAFF,phy.hod@vu.edu.pk
+Phy501 Instructor,phy501.instructor@vu.edu.pk,STAFF,phy.hod@vu.edu.pk
+Phy601 Instructor,phy601.instructor@vu.edu.pk,STAFF,phy.hod@vu.edu.pk
+Phy701 Instructor,phy701.instructor@vu.edu.pk,STAFF,phy.hod@vu.edu.pk
+Psy101 Instructor,psy101.instructor@vu.edu.pk,STAFF,psy.hod@vu.edu.pk
+Psy201 Instructor,psy201.instructor@vu.edu.pk,STAFF,psy.hod@vu.edu.pk
+Psy301 Instructor,psy301.instructor@vu.edu.pk,STAFF,psy.hod@vu.edu.pk
+Psy401 Instructor,psy401.instructor@vu.edu.pk,STAFF,psy.hod@vu.edu.pk
+Psy501 Instructor,psy501.instructor@vu.edu.pk,STAFF,psy.hod@vu.edu.pk
+Psy601 Instructor,psy601.instructor@vu.edu.pk,STAFF,psy.hod@vu.edu.pk
+Psy701 Instructor,psy701.instructor@vu.edu.pk,STAFF,psy.hod@vu.edu.pk
+Pad101 Instructor,pad101.instructor@vu.edu.pk,STAFF,pa.hod@vu.edu.pk
+Pad201 Instructor,pad201.instructor@vu.edu.pk,STAFF,pa.hod@vu.edu.pk
+Pad301 Instructor,pad301.instructor@vu.edu.pk,STAFF,pa.hod@vu.edu.pk
+Pad401 Instructor,pad401.instructor@vu.edu.pk,STAFF,pa.hod@vu.edu.pk
+Pad501 Instructor,pad501.instructor@vu.edu.pk,STAFF,pa.hod@vu.edu.pk
+Pad601 Instructor,pad601.instructor@vu.edu.pk,STAFF,pa.hod@vu.edu.pk
+Pad701 Instructor,pad701.instructor@vu.edu.pk,STAFF,pa.hod@vu.edu.pk
+Soc101 Instructor,soc101.instructor@vu.edu.pk,STAFF,soc.hod@vu.edu.pk
+Soc201 Instructor,soc201.instructor@vu.edu.pk,STAFF,soc.hod@vu.edu.pk
+Soc301 Instructor,soc301.instructor@vu.edu.pk,STAFF,soc.hod@vu.edu.pk
+Soc401 Instructor,soc401.instructor@vu.edu.pk,STAFF,soc.hod@vu.edu.pk
+Soc501 Instructor,soc501.instructor@vu.edu.pk,STAFF,soc.hod@vu.edu.pk
+Soc601 Instructor,soc601.instructor@vu.edu.pk,STAFF,soc.hod@vu.edu.pk
+Soc701 Instructor,soc701.instructor@vu.edu.pk,STAFF,soc.hod@vu.edu.pk
+Sta101 Instructor,sta101.instructor@vu.edu.pk,STAFF,sta.hod@vu.edu.pk
+Sta201 Instructor,sta201.instructor@vu.edu.pk,STAFF,sta.hod@vu.edu.pk
+Sta301 Instructor,sta301.instructor@vu.edu.pk,STAFF,sta.hod@vu.edu.pk
+Sta401 Instructor,sta401.instructor@vu.edu.pk,STAFF,sta.hod@vu.edu.pk
+Sta501 Instructor,sta501.instructor@vu.edu.pk,STAFF,sta.hod@vu.edu.pk
+Sta601 Instructor,sta601.instructor@vu.edu.pk,STAFF,sta.hod@vu.edu.pk
+Sta701 Instructor,sta701.instructor@vu.edu.pk,STAFF,sta.hod@vu.edu.pk
+Urd101 Instructor,urd101.instructor@vu.edu.pk,STAFF,urd.hod@vu.edu.pk
+Urd201 Instructor,urd201.instructor@vu.edu.pk,STAFF,urd.hod@vu.edu.pk
+Urd301 Instructor,urd301.instructor@vu.edu.pk,STAFF,urd.hod@vu.edu.pk
+Urd401 Instructor,urd401.instructor@vu.edu.pk,STAFF,urd.hod@vu.edu.pk
+Urd501 Instructor,urd501.instructor@vu.edu.pk,STAFF,urd.hod@vu.edu.pk
+Urd601 Instructor,urd601.instructor@vu.edu.pk,STAFF,urd.hod@vu.edu.pk
+Urd701 Instructor,urd701.instructor@vu.edu.pk,STAFF,urd.hod@vu.edu.pk
+Course Registration,course.registration@vu.edu.pk,STAFF,academic.hod@vu.edu.pk
+Course Selection,course.selection@vu.edu.pk,STAFF,academic.hod@vu.edu.pk
+Academic Records,academic.records@vu.edu.pk,STAFF,academic.hod@vu.edu.pk
+Admission Application,admission.application@vu.edu.pk,STAFF,admissions.hod@vu.edu.pk
+Admission Verification,admission.verification@vu.edu.pk,STAFF,admissions.hod@vu.edu.pk
+Admission Support,admission.support@vu.edu.pk,STAFF,admissions.hod@vu.edu.pk
+Fee Matters,fee.matters@vu.edu.pk,STAFF,finance.hod@vu.edu.pk
+Scholarships Matters,scholarships.matters@vu.edu.pk,STAFF,finance.hod@vu.edu.pk
+Refund Matters,refund.matters@vu.edu.pk,STAFF,finance.hod@vu.edu.pk
+Datesheet Matters,datesheet.matters@vu.edu.pk,STAFF,examinations.hod@vu.edu.pk
+Result Matters,result.matters@vu.edu.pk,STAFF,examinations.hod@vu.edu.pk
+Transcript Matters,transcript.matters@vu.edu.pk,STAFF,examinations.hod@vu.edu.pk
+Login Support,login.support@vu.edu.pk,STAFF,technical.hod@vu.edu.pk
+Password Reset,password.reset@vu.edu.pk,STAFF,technical.hod@vu.edu.pk
+LMS Support,lms.support@vu.edu.pk,STAFF,technical.hod@vu.edu.pk
+General Administration,general.administration@vu.edu.pk,STAFF,administration.hod@vu.edu.pk
+HR Matters,hr.matters@vu.edu.pk,STAFF,administration.hod@vu.edu.pk
+Campus Administration,campus.administration@vu.edu.pk,STAFF,administration.hod@vu.edu.pk
+Student Records,student.records@vu.edu.pk,STAFF,registrar.hod@vu.edu.pk
+Degree Verification,degree.verification@vu.edu.pk,STAFF,registrar.hod@vu.edu.pk
+Official Documents,official.documents@vu.edu.pk,STAFF,registrar.hod@vu.edu.pk
+Scs2601,scs2601@vu.edu.pk,STUDENT,
+Scs2602,scs2602@vu.edu.pk,STUDENT,
+Smgt2601,smgt2601@vu.edu.pk,STUDENT,
+Seco2601,seco2601@vu.edu.pk,STUDENT,
+Sedu2601,sedu2601@vu.edu.pk,STUDENT,
+Seng2601,seng2601@vu.edu.pk,STUDENT,

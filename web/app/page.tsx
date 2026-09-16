@@ -4,6 +4,7 @@ import { ArrowRight, BrainCircuit, Clock3, Route, Sparkles, Users } from "lucide
 import { auth } from "@/lib/auth";
 import LandingAccuracyChart from "@/components/LandingAccuracyChart";
 import BrandMark from "@/components/BrandMark";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const benefits = [
   { label: "AI-powered classification", icon: BrainCircuit },
@@ -17,6 +18,7 @@ export default async function Home() {
 
   return (
     <main className="landing-community-page">
+      <div className="landing-theme-toggle"><ThemeToggle /></div>
       <section className="landing-community-hero">
         <div className="landing-community-brand">
           <BrandMark size={34} />

@@ -31,7 +31,11 @@ export function useTheme() {
     setThemeState(initial);
   }, []);
 
-  const toggle = () => setTheme(theme === "light" ? "dark" : "light");
+  const toggle = () => {
+    const nextTheme: Theme = theme === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+    setThemeState(nextTheme);
+  };
 
   return { theme, isDark: theme === "dark", mounted, toggle };
 }

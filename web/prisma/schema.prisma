@@ -71,6 +71,9 @@ model User {
   role             Role             @default(STUDENT)
   departmentId     String?
   department       Department?      @relation(fields: [departmentId], references: [id])
+  hodId            String?
+  hod              User?            @relation("HodStaff", fields: [hodId], references: [id], onDelete: SetNull)
+  staff            User[]           @relation("HodStaff")
   isOnLeave        Boolean          @default(false) // FR-13: instructor leave / auto-reply mode
   accounts         Account[]
   sessions         Session[]

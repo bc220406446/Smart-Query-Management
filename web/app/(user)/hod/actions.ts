@@ -22,6 +22,18 @@ export async function overrideQuery(formData: FormData): Promise<void> {
     redirect(`/hod?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "Invalid override.")}`);
   }
 
+  // HODs may only manage queries assigned to staff who report to them.
+  // Admins retain the global override capability.
+  if (user.role === Role.HOD) {
+    const scopedQuery = await prisma.query.findUnique({
+      where: { id: parsed.data.queryId },
+      select: { assignedTo: { select: { hodId: true } } },
+    });
+    if (scopedQuery?.assignedTo?.hodId !== user.id) {
+      redirect("/hod?error=You%20can%20only%20manage%20queries%20assigned%20to%20your%20staff.");
+    }
+  }
+
   const query = await prisma.query.update({
     where: { id: parsed.data.queryId },
     data: {

@@ -21,23 +21,23 @@ export default async function HodConsolePage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireRole([Role.HOD, Role.ADMIN]);
+  const user = await requireRole([Role.HOD, Role.ADMIN]);
   const { error } = await searchParams;
 
   const [escalated, openQueries, assignees] = await Promise.all([
     prisma.query.findMany({
-      where: { status: "ESCALATED" },
+      where: user.role === Role.ADMIN ? { status: "ESCALATED" } : { status: "ESCALATED", assignedTo: { hodId: user.id } },
       orderBy: { escalatedAt: "desc" },
       include: { student: { select: { name: true } }, assignedTo: { select: { name: true } } },
     }),
     prisma.query.findMany({
-      where: { status: { in: ["SUBMITTED", "CLASSIFYING", "ROUTED", "IN_PROGRESS"] } },
+      where: user.role === Role.ADMIN ? { status: { in: ["SUBMITTED", "CLASSIFYING", "ROUTED", "IN_PROGRESS"] } } : { status: { in: ["SUBMITTED", "CLASSIFYING", "ROUTED", "IN_PROGRESS"] }, assignedTo: { hodId: user.id } },
       orderBy: { createdAt: "asc" },
       take: 20,
       include: { student: { select: { name: true } }, assignedTo: { select: { name: true } } },
     }),
     prisma.user.findMany({
-      where: { role: { in: [Role.INSTRUCTOR, Role.HOD] } },
+      where: user.role === Role.ADMIN ? { role: { in: [Role.INSTRUCTOR, Role.HOD] } } : { role: Role.INSTRUCTOR, hodId: user.id },
       orderBy: { name: "asc" },
       select: { id: true, name: true, role: true },
     }),

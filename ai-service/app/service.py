@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import AuditLog, Notification, Query, QueryChannel, QueryStatus
+from app.models import AuditLog, Notification, Query, QueryChannel, QueryStatus, User
 from app.pipeline.classifier import classify_text
 from app.pipeline.drafts import draft_reply
 from app.pipeline.router import route_query
@@ -124,8 +124,12 @@ def run_escalation(db: Session) -> List[str]:
     ]
     stale = list(
         db.scalars(
-            select(Query).where(
-                Query.status.in_(open_statuses), Query.updated_at < cutoff
+            select(Query)
+            .join(User, Query.assigned_to_id == User.id)
+            .where(
+                Query.status.in_(open_statuses),
+                Query.updated_at < cutoff,
+                User.hod_id.is_not(None),
             )
         )
     )
