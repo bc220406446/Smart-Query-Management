@@ -18,12 +18,13 @@ import {
 
 const STATUS_COLORS: Record<string, string> = {
   SUBMITTED: "var(--text-tertiary)",
-  CLASSIFYING: "var(--warning)",
-  ROUTED: "var(--info)",
+  ASSIGNED: "var(--info)",
   IN_PROGRESS: "var(--brand-500)",
   RESOLVED: "var(--success)",
-  ESCALATED: "var(--danger)",
-  CLOSED: "var(--text-tertiary)",
+  FORWARDED_TO_HOD: "var(--warning)",
+  AUTO_ESCALATED: "var(--danger)",
+  HOD_ESCALATED: "var(--danger)",
+  FORWARDED_TO_STAFF: "var(--brand-500)",
 };
 
 function hexVar(name: string): string {

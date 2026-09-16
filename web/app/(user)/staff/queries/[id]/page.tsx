@@ -19,7 +19,7 @@ export default async function StaffQueryDetailPage({
   const { error } = await searchParams;
 
   const query = await prisma.query.findFirst({
-    where: { id, OR: [{ assignedToId: user.id }, { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] } }] },
+    where: { id, OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] } }] },
     include: {
       student: { select: { name: true, email: true } },
       replies: { orderBy: { createdAt: "asc" }, include: { author: { select: { name: true } } } },
@@ -29,8 +29,8 @@ export default async function StaffQueryDetailPage({
 
   if (!query) notFound();
 
-  const resolved = query.status === "RESOLVED" || query.status === "CLOSED";
-  const canRespond = !resolved && query.status !== "FORWARDED_TO_HOD" && query.status !== "ESCALATED";
+  const resolved = query.status === "RESOLVED";
+  const canRespond = !resolved && !["FORWARDED_TO_HOD", "AUTO_ESCALATED", "HOD_ESCALATED"].includes(query.status);
 
   return (
     <main className="container-page" style={{ maxWidth: 880 }}>
@@ -234,7 +234,7 @@ export default async function StaffQueryDetailPage({
               placeholder="Accept the AI draft or write your own reply."
             />
           </div>
-          <div className="staff-action-footer"><select id="reply-status" name="status" className="field-select" defaultValue={query.status === "ESCALATED" ? "ESCALATED" : query.status === "FORWARDED_TO_HOD" ? "FORWARDED_TO_HOD" : "RESOLVED"}><option value="RESOLVED">Resolved</option><option value="IN_PROGRESS">In progress</option><option value="FORWARDED_TO_HOD">Forwarded to HOD</option></select><button type="submit" className="btn btn-primary">Update query</button></div>
+          <div className="staff-action-footer"><select id="reply-status" name="status" className="field-select" defaultValue="RESOLVED"><option value="RESOLVED">Resolved</option><option value="IN_PROGRESS">In progress</option><option value="FORWARDED_TO_HOD">Forwarded to HOD</option></select><button type="submit" className="btn btn-primary">Update query</button></div>
         </form>
         </div>
       )}

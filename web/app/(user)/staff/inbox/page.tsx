@@ -10,7 +10,9 @@ export default async function StaffInboxPage() {
   const user = await requireRole([...STAFF_ROLES]);
 
   const queries = await prisma.query.findMany({
-    where: user.role === "ADMIN" ? { OR: [{ assignedToId: user.id }, { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] } }] } : user.role === "HOD" ? { OR: [{ assignedToId: user.id }, { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] }, assignedTo: { hodId: user.id } }] } : { assignedToId: user.id },
+    // Auto-escalated queries retain their instructor assignment; the HOD
+    // sees them through the instructor's hodId relationship.
+    where: user.role === "ADMIN" ? { OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] } }] } : user.role === "HOD" ? { OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] }, assignedTo: { hodId: user.id } }] } : { assignedToId: user.id },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     include: {
       student: { select: { name: true } },

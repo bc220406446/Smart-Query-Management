@@ -23,14 +23,14 @@ enum Role {
 }
 
 enum QueryStatus {
-  SUBMITTED // received, awaiting classification
-  CLASSIFYING // AI pipeline is processing
-  ROUTED // assigned to a department / instructor
-  IN_PROGRESS // staff is working on it
-  RESOLVED // answered / resolved
-  FORWARDED_TO_HOD // manually forwarded by staff to HOD
-  ESCALATED // escalated to HOD by timeout or HOD action
-  CLOSED // archived after resolution
+  SUBMITTED
+  ASSIGNED
+  IN_PROGRESS
+  RESOLVED
+  FORWARDED_TO_HOD
+  AUTO_ESCALATED
+  HOD_ESCALATED
+  FORWARDED_TO_STAFF
 }
 
 enum QueryPriority {

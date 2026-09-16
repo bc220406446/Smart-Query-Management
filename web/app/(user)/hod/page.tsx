@@ -8,13 +8,12 @@ export const dynamic = "force-dynamic";
 
 const STATUS_OPTIONS = [
   "SUBMITTED",
-  "CLASSIFYING",
-  "ROUTED",
+  "ASSIGNED",
   "IN_PROGRESS",
   "RESOLVED",
-  "ESCALATED",
+  "AUTO_ESCALATED",
+  "HOD_ESCALATED",
   "FORWARDED_TO_HOD",
-  "CLOSED",
 ];
 
 export default async function HodConsolePage({
@@ -25,14 +24,27 @@ export default async function HodConsolePage({
   const user = await requireRole([Role.HOD, Role.ADMIN]);
   const { error } = await searchParams;
 
+  // Keep the HOD console correct even when the background AI scheduler is
+  // temporarily unavailable. The scheduler performs the same transition.
+  const escalationCutoff = new Date();
+  escalationCutoff.setHours(escalationCutoff.getHours() - 24);
+  await prisma.query.updateMany({
+    where: {
+      status: { in: ["SUBMITTED", "ASSIGNED", "IN_PROGRESS"] },
+      updatedAt: { lt: escalationCutoff },
+      ...(user.role === Role.HOD ? { assignedTo: { hodId: user.id } } : {}),
+    },
+    data: { status: "AUTO_ESCALATED", escalatedAt: new Date() },
+  });
+
   const [escalated, openQueries, assignees] = await Promise.all([
     prisma.query.findMany({
-      where: user.role === Role.ADMIN ? { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] } } : { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] }, assignedTo: { hodId: user.id } },
+      where: user.role === Role.ADMIN ? { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] } } : { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] }, assignedTo: { hodId: user.id } },
       orderBy: { escalatedAt: "desc" },
       include: { student: { select: { name: true } }, assignedTo: { select: { name: true } } },
     }),
     prisma.query.findMany({
-      where: user.role === Role.ADMIN ? { status: { in: ["SUBMITTED", "CLASSIFYING", "ROUTED", "IN_PROGRESS"] } } : { status: { in: ["SUBMITTED", "CLASSIFYING", "ROUTED", "IN_PROGRESS"] }, assignedTo: { hodId: user.id } },
+      where: user.role === Role.ADMIN ? { status: { in: ["SUBMITTED", "ASSIGNED", "IN_PROGRESS"] } } : { status: { in: ["SUBMITTED", "ASSIGNED", "IN_PROGRESS"] }, assignedTo: { hodId: user.id } },
       orderBy: { createdAt: "asc" },
       take: 20,
       include: { student: { select: { name: true } }, assignedTo: { select: { name: true } } },

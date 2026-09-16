@@ -13,7 +13,7 @@ import { notifyUser } from "@/lib/notify";
 async function loadAssignableQuery(queryId: string) {
   const user = await requireRole([...STAFF_ROLES]);
   const query = await prisma.query.findFirst({
-    where: { id: queryId, OR: [{ assignedToId: user.id }, { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] } }] },
+    where: { id: queryId, OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] } }] },
   });
   if (!query) throw new Error("Query not found or not assigned to you.");
   return { user, query };
@@ -22,7 +22,7 @@ async function loadAssignableQuery(queryId: string) {
 /** FR-05: staff sends a reply; the query moves to RESOLVED. */
 export async function sendReply(queryId: string, formData: FormData): Promise<void> {
   const { user, query } = await loadAssignableQuery(queryId);
-  if (query.status === "FORWARDED_TO_HOD" || query.status === "ESCALATED") {
+  if (query.status !== "SUBMITTED" && query.status !== "ASSIGNED" && query.status !== "IN_PROGRESS") {
     redirect(`/staff/queries/${queryId}?error=${encodeURIComponent("This query has already been forwarded to the HOD and cannot receive another staff reply.")}`);
   }
 
@@ -41,7 +41,7 @@ export async function sendReply(queryId: string, formData: FormData): Promise<vo
     }),
     prisma.query.update({
       where: { id: query.id },
-        data: { status, resolvedAt: status === "RESOLVED" || status === "CLOSED" ? new Date() : null, escalatedAt: status === "ESCALATED" ? new Date() : null },
+        data: { status, resolvedAt: status === "RESOLVED" ? new Date() : null, escalatedAt: status === "AUTO_ESCALATED" ? new Date() : null },
     }),
   ]);
 
@@ -105,7 +105,7 @@ export async function approveAiDraft(queryId: string): Promise<void> {
 
 export async function forwardToHod(queryId: string, formData: FormData): Promise<void> {
   const { user, query } = await loadAssignableQuery(queryId);
-  if (query.status === "FORWARDED_TO_HOD" || query.status === "ESCALATED") {
+  if (query.status !== "SUBMITTED" && query.status !== "ASSIGNED" && query.status !== "IN_PROGRESS") {
     redirect(`/staff/queries/${queryId}?error=${encodeURIComponent("This query has already been forwarded to the HOD.")}`);
   }
   const parsed = replySchema.safeParse({ body: formData.get("body") });

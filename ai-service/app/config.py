@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     query_processing_batch_size: int = 10
 
     # FR-07: hours a query may stay unresolved before auto-escalation.
-    escalation_hours: int = 20
+    escalation_hours: int = 24
     # How often the escalation scheduler runs, in minutes.
     escalation_poll_minutes: int = 10
 

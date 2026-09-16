@@ -20,13 +20,13 @@ export default async function AdminAnalyticsPage() {
       prisma.query.count(),
       prisma.query.count({
         where: {
-          status: { in: ["SUBMITTED", "CLASSIFYING", "ROUTED", "IN_PROGRESS"] },
+          status: { in: ["SUBMITTED", "ASSIGNED", "IN_PROGRESS"] },
         },
       }),
       prisma.query.count({
-        where: { status: { in: ["RESOLVED", "CLOSED"] } },
+        where: { status: "RESOLVED" },
       }),
-      prisma.query.count({ where: { status: "ESCALATED" } }),
+      prisma.query.count({ where: { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED"] } } }),
     ]);
 
   const departments = await prisma.department.findMany();

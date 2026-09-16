@@ -2,13 +2,13 @@ import { QueryPriority, QueryStatus } from "@prisma/client";
 
 const STATUS_CLASS: Record<QueryStatus, string> = {
   [QueryStatus.SUBMITTED]: "badge-status badge-submitted",
-  [QueryStatus.CLASSIFYING]: "badge-status badge-classifying",
-  [QueryStatus.ROUTED]: "badge-status badge-routed",
+  [QueryStatus.ASSIGNED]: "badge-status badge-routed",
   [QueryStatus.IN_PROGRESS]: "badge-status badge-in_progress",
   [QueryStatus.RESOLVED]: "badge-status badge-resolved",
   [QueryStatus.FORWARDED_TO_HOD]: "badge-status badge-escalated",
-  [QueryStatus.ESCALATED]: "badge-status badge-escalated",
-  [QueryStatus.CLOSED]: "badge-status badge-closed",
+  [QueryStatus.AUTO_ESCALATED]: "badge-status badge-escalated",
+  [QueryStatus.HOD_ESCALATED]: "badge-status badge-danger",
+  [QueryStatus.FORWARDED_TO_STAFF]: "badge-status badge-routed",
 };
 
 const PRIORITY_CLASS: Record<QueryPriority, string> = {
@@ -21,7 +21,7 @@ const PRIORITY_CLASS: Record<QueryPriority, string> = {
 export function StatusBadge({ status }: { status: QueryStatus }) {
   return (
     <span className={STATUS_CLASS[status]}>
-      {status === QueryStatus.FORWARDED_TO_HOD ? "Forwarded to HOD" : status === QueryStatus.ESCALATED ? "Escalated" : status.replace("_", " ")}
+      {status.replaceAll("_", " ")}
     </span>
   );
 }

@@ -40,7 +40,7 @@ export async function overrideQuery(formData: FormData): Promise<void> {
       status: parsed.data.status,
       assignedToId: parsed.data.assignedToId ?? null,
       resolvedAt: parsed.data.status === "RESOLVED" ? new Date() : undefined,
-      escalatedAt: parsed.data.status === "ESCALATED" ? new Date() : undefined,
+      escalatedAt: parsed.data.status === "AUTO_ESCALATED" || parsed.data.status === "HOD_ESCALATED" ? new Date() : undefined,
     },
   });
 

@@ -19,8 +19,7 @@ from app.pipeline.rules import CATEGORY_TO_DEPARTMENT
 def _open_count_subquery(db: Session):
     open_statuses = [
         QueryStatus.SUBMITTED,
-        QueryStatus.CLASSIFYING,
-        QueryStatus.ROUTED,
+        QueryStatus.ASSIGNED,
         QueryStatus.IN_PROGRESS,
     ]
     return (

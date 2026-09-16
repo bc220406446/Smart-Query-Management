@@ -56,7 +56,7 @@ def process_pending_queries(db: Session, limit: int = 10) -> List[str]:
 
     processed: List[str] = []
     for query in pending:
-        query.status = QueryStatus.CLASSIFYING
+        query.status = QueryStatus.ASSIGNED
         db.flush()
 
         result = classify_text(query.message)
@@ -65,7 +65,7 @@ def process_pending_queries(db: Session, limit: int = 10) -> List[str]:
         )
         draft = draft_reply(query, result.category, result.priority)
 
-        query.status = QueryStatus.ROUTED
+        query.status = QueryStatus.ASSIGNED
         query.category = result.category
         query.priority = result.priority
         query.confidence = result.confidence
@@ -118,8 +118,7 @@ def run_escalation(db: Session) -> List[str]:
     cutoff = datetime.now(timezone.utc) - timedelta(hours=settings.escalation_hours)
     open_statuses = [
         QueryStatus.SUBMITTED,
-        QueryStatus.CLASSIFYING,
-        QueryStatus.ROUTED,
+        QueryStatus.ASSIGNED,
         QueryStatus.IN_PROGRESS,
     ]
     stale = list(
@@ -137,7 +136,7 @@ def run_escalation(db: Session) -> List[str]:
     escalated: List[str] = []
     now = datetime.now(timezone.utc)
     for query in stale:
-        query.status = QueryStatus.ESCALATED
+        query.status = QueryStatus.AUTO_ESCALATED
         query.escalated_at = now
         query.updated_at = now
         if query.student_id:

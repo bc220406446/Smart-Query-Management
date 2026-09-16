@@ -25,8 +25,8 @@ export default async function DashboardPage() {
     }),
     prisma.query.count({
       where: isStaff
-        ? { assignedToId: user.id, status: { in: ["RESOLVED", "CLOSED"] } }
-        : { studentId: user.id, status: { in: ["RESOLVED", "CLOSED"] } },
+        ? { assignedToId: user.id, status: "RESOLVED" }
+        : { studentId: user.id, status: "RESOLVED" },
     }),
     prisma.query.count({ where: isStaff ? { assignedToId: user.id, status: "FORWARDED_TO_HOD" } : { studentId: user.id, status: "FORWARDED_TO_HOD" } }),
     prisma.query.count({ where: isStaff ? { assignedToId: user.id, status: "IN_PROGRESS" } : { studentId: user.id, status: "IN_PROGRESS" } }),
