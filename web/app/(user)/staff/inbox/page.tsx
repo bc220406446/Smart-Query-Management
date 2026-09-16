@@ -10,7 +10,7 @@ export default async function StaffInboxPage() {
   const user = await requireRole([...STAFF_ROLES]);
 
   const queries = await prisma.query.findMany({
-    where: user.role === "ADMIN" ? { OR: [{ assignedToId: user.id }, { status: "ESCALATED" }] } : user.role === "HOD" ? { OR: [{ assignedToId: user.id }, { status: "ESCALATED", assignedTo: { hodId: user.id } }] } : { assignedToId: user.id },
+    where: user.role === "ADMIN" ? { OR: [{ assignedToId: user.id }, { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] } }] } : user.role === "HOD" ? { OR: [{ assignedToId: user.id }, { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] }, assignedTo: { hodId: user.id } }] } : { assignedToId: user.id },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     include: {
       student: { select: { name: true } },
@@ -57,14 +57,6 @@ export default async function StaffInboxPage() {
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
                       {q.subject}
-                      {q.aiDraftReply && (
-                        <span
-                          className="badge badge-warning"
-                          style={{ fontSize: 10, padding: "2px 7px" }}
-                        >
-                          AI draft
-                        </span>
-                      )}
                     </Link>
                   </td>
                   <td style={{ color: "var(--text-secondary)" }}>

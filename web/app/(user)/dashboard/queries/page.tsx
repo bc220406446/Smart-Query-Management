@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { PriorityBadge, StatusBadge } from "@/components/QueryStatusBadge";
+import QueryModal from "@/components/QueryModal";
 
 export const dynamic = "force-dynamic";
 
@@ -22,19 +23,14 @@ export default async function MyQueriesPage() {
             Every query you have submitted, with current status and assignment.
           </p>
         </div>
-        <Link href="/dashboard/queries/new" className="btn btn-primary">
-          + New Query
-        </Link>
+        <QueryModal />
       </div>
 
       <div className="table-wrap">
         {queries.length === 0 ? (
           <div className="empty-state">
             <span className="empty-state-icon" aria-hidden="true">-</span>
-            You haven&apos;t submitted any queries yet.{" "}
-            <Link href="/dashboard/queries/new" style={{ fontWeight: 600 }}>
-              Submit one
-            </Link>
+            You haven&apos;t submitted any queries yet. Use “New query” to get started.
           </div>
         ) : (
           <table className="table table-stripe">

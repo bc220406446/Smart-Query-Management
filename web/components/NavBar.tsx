@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Bell, ClipboardList, FilePlus2, Inbox, LayoutDashboard, Megaphone, Settings2, ShieldCheck } from "lucide-react";
+import { BarChart3, ClipboardList, Inbox, LayoutDashboard, Megaphone, Settings2, ShieldCheck } from "lucide-react";
 import { Role } from "@prisma/client";
 import type { SessionUser } from "@/lib/roles";
 import SignOutButton from "@/components/SignOutButton";
@@ -7,7 +7,7 @@ import BrandMark from "@/components/BrandMark";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const ROLE_LINKS: Record<Role, Array<{ href: string; label: string; icon: typeof LayoutDashboard }>> = {
-  [Role.STUDENT]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/dashboard/queries", label: "My Queries", icon: ClipboardList }, { href: "/dashboard/queries/new", label: "New Query", icon: FilePlus2 }],
+  [Role.STUDENT]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone }, { href: "/dashboard/queries", label: "Queries", icon: ClipboardList }],
   [Role.INSTRUCTOR]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/staff/inbox", label: "Inbox", icon: Inbox }],
   [Role.HOD]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/staff/inbox", label: "Inbox", icon: Inbox }, { href: "/hod", label: "HOD Console", icon: ShieldCheck }],
   [Role.ADMIN]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/admin", label: "Analytics", icon: BarChart3 }, { href: "/admin/announcements", label: "Announcements", icon: Megaphone }, { href: "/admin/audit", label: "Audit Log", icon: Settings2 }],

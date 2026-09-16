@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/roles";
 import { STAFF_ROLES } from "@/lib/roles";
 import { PriorityBadge, StatusBadge } from "@/components/QueryStatusBadge";
-import { sendReply, approveAiDraft } from "./actions";
+import { sendReply } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ export default async function StaffQueryDetailPage({
   const { error } = await searchParams;
 
   const query = await prisma.query.findFirst({
-    where: { id, OR: [{ assignedToId: user.id }, { status: "ESCALATED" }] },
+    where: { id, OR: [{ assignedToId: user.id }, { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] } }] },
     include: {
       student: { select: { name: true, email: true } },
       replies: { orderBy: { createdAt: "asc" }, include: { author: { select: { name: true } } } },
@@ -30,6 +30,7 @@ export default async function StaffQueryDetailPage({
   if (!query) notFound();
 
   const resolved = query.status === "RESOLVED" || query.status === "CLOSED";
+  const canRespond = !resolved && query.status !== "FORWARDED_TO_HOD" && query.status !== "ESCALATED";
 
   return (
     <main className="container-page" style={{ maxWidth: 880 }}>
@@ -150,28 +151,11 @@ export default async function StaffQueryDetailPage({
               className="section-label"
               style={{ color: "var(--warning)", textTransform: "uppercase" }}
             >
-              ✨ AI-drafted reply (FR-05)
+              ✨ AI-drafted reply
             </span>
-            <form action={approveAiDraft.bind(null, query.id)}>
-              <button
-                type="submit"
-                className="btn btn-primary btn-sm"
-                style={{ background: "var(--warning)", borderColor: "var(--warning)" }}
-              >
-                Approve &amp; send
-              </button>
-            </form>
+            <span className="caption">AI reply is prefilled below for editing</span>
           </div>
-          <p
-            style={{
-              whiteSpace: "pre-wrap",
-              fontSize: 14,
-              lineHeight: 1.6,
-              color: "var(--text-primary)",
-            }}
-          >
-            {query.aiDraftReply}
-          </p>
+          <p style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.6, color: "var(--text-primary)" }}>{query.aiDraftReply}</p>
         </div>
       )}
 
@@ -234,15 +218,11 @@ export default async function StaffQueryDetailPage({
         )}
       </div>
 
-      {!resolved && (
-        <form
-          action={sendReply.bind(null, query.id)}
-          style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 12 }}
-        >
+      {canRespond && (
+        <div className="staff-query-actions">
+        <form action={sendReply.bind(null, query.id)} className="card staff-action-card">
           <div className="field">
-            <label htmlFor="body" className="field-label">
-              Write a reply
-            </label>
+            <label htmlFor="body" className="field-label">Reply to student</label>
             <textarea
               id="body"
               name="body"
@@ -250,13 +230,13 @@ export default async function StaffQueryDetailPage({
               minLength={1}
               rows={6}
               className="field-textarea"
-              placeholder="Sending a reply marks the query as resolved."
+              defaultValue={query.aiDraftReply ?? ""}
+              placeholder="Accept the AI draft or write your own reply."
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-lg">
-            Send reply
-          </button>
+          <div className="staff-action-footer"><select id="reply-status" name="status" className="field-select" defaultValue={query.status === "ESCALATED" ? "ESCALATED" : query.status === "FORWARDED_TO_HOD" ? "FORWARDED_TO_HOD" : "RESOLVED"}><option value="RESOLVED">Resolved</option><option value="IN_PROGRESS">In progress</option><option value="FORWARDED_TO_HOD">Forwarded to HOD</option></select><button type="submit" className="btn btn-primary">Update query</button></div>
         </form>
+        </div>
       )}
     </main>
   );

@@ -28,7 +28,8 @@ enum QueryStatus {
   ROUTED // assigned to a department / instructor
   IN_PROGRESS // staff is working on it
   RESOLVED // answered / resolved
-  ESCALATED // escalated to HOD (24h rule or manual)
+  FORWARDED_TO_HOD // manually forwarded by staff to HOD
+  ESCALATED // escalated to HOD by timeout or HOD action
   CLOSED // archived after resolution
 }
 

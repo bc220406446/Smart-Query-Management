@@ -13,6 +13,7 @@ const STATUS_OPTIONS = [
   "IN_PROGRESS",
   "RESOLVED",
   "ESCALATED",
+  "FORWARDED_TO_HOD",
   "CLOSED",
 ];
 
@@ -26,7 +27,7 @@ export default async function HodConsolePage({
 
   const [escalated, openQueries, assignees] = await Promise.all([
     prisma.query.findMany({
-      where: user.role === Role.ADMIN ? { status: "ESCALATED" } : { status: "ESCALATED", assignedTo: { hodId: user.id } },
+      where: user.role === Role.ADMIN ? { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] } } : { status: { in: ["ESCALATED", "FORWARDED_TO_HOD"] }, assignedTo: { hodId: user.id } },
       orderBy: { escalatedAt: "desc" },
       include: { student: { select: { name: true } }, assignedTo: { select: { name: true } } },
     }),

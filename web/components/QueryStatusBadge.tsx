@@ -6,6 +6,7 @@ const STATUS_CLASS: Record<QueryStatus, string> = {
   [QueryStatus.ROUTED]: "badge-status badge-routed",
   [QueryStatus.IN_PROGRESS]: "badge-status badge-in_progress",
   [QueryStatus.RESOLVED]: "badge-status badge-resolved",
+  [QueryStatus.FORWARDED_TO_HOD]: "badge-status badge-escalated",
   [QueryStatus.ESCALATED]: "badge-status badge-escalated",
   [QueryStatus.CLOSED]: "badge-status badge-closed",
 };
@@ -20,7 +21,7 @@ const PRIORITY_CLASS: Record<QueryPriority, string> = {
 export function StatusBadge({ status }: { status: QueryStatus }) {
   return (
     <span className={STATUS_CLASS[status]}>
-      {status.replace("_", " ")}
+      {status === QueryStatus.FORWARDED_TO_HOD ? "Forwarded to HOD" : status === QueryStatus.ESCALATED ? "Escalated" : status.replace("_", " ")}
     </span>
   );
 }

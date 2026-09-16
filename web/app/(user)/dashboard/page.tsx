@@ -16,24 +16,20 @@ export default async function DashboardPage() {
   const user = await requireUser();
   const isStaff = ["INSTRUCTOR", "HOD", "ADMIN"].includes(user.role);
 
-  const [myQueries, announcements, openCount, resolvedCount] = await Promise.all([
+  const [myQueries, resolvedCount, forwardedCount, inProgressCount] = await Promise.all([
     prisma.query.findMany({
       where: isStaff ? { assignedToId: user.id } : { studentId: user.id },
       orderBy: { createdAt: "desc" },
       take: 5,
       include: { assignedTo: { select: { name: true } }, department: { select: { name: true } } },
     }),
-    prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 3 }),
-    prisma.query.count({
-      where: isStaff
-        ? { assignedToId: user.id, status: { in: ["SUBMITTED", "CLASSIFYING", "ROUTED", "IN_PROGRESS"] } }
-        : { studentId: user.id, status: { in: ["SUBMITTED", "CLASSIFYING", "ROUTED", "IN_PROGRESS", "ESCALATED"] } },
-    }),
     prisma.query.count({
       where: isStaff
         ? { assignedToId: user.id, status: { in: ["RESOLVED", "CLOSED"] } }
         : { studentId: user.id, status: { in: ["RESOLVED", "CLOSED"] } },
     }),
+    prisma.query.count({ where: isStaff ? { assignedToId: user.id, status: "FORWARDED_TO_HOD" } : { studentId: user.id, status: "FORWARDED_TO_HOD" } }),
+    prisma.query.count({ where: isStaff ? { assignedToId: user.id, status: "IN_PROGRESS" } : { studentId: user.id, status: "IN_PROGRESS" } }),
   ]);
 
   return (
@@ -49,20 +45,12 @@ export default async function DashboardPage() {
               : "Track your queries and their resolution status."}
           </p>
         </div>
-        {!isStaff && (
-          <Link
-            href="/dashboard/queries/new"
-            className="btn btn-primary"
-          >
-            + New Query
-          </Link>
-        )}
       </div>
 
       <div className="stats-grid dashboard-stat-grid">
-        {statCards(isStaff ? "Assigned open" : "Open queries", openCount)}
-        {statCards(isStaff ? "Assigned resolved" : "Resolved", resolvedCount)}
-        {statCards("Announcements", announcements.length)}
+        {statCards("Total resolved", resolvedCount)}
+        {statCards("Total forwarded", forwardedCount)}
+        {statCards("Total in progress", inProgressCount)}
       </div>
 
       <div className="dashboard-sections">
@@ -98,29 +86,7 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        <section className="dashboard-full-section">
-          <h3 style={{ marginBottom: 16 }}>Announcements</h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {announcements.length === 0 ? (
-              <div className="card" style={{ textAlign: "center", padding: "24px 16px", color: "var(--text-tertiary)", fontSize: 13 }}>
-                No announcements yet.
-              </div>
-            ) : (
-              announcements.map((a) => (
-                <div key={a.id} className="card" style={{ padding: "14px 16px" }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>{a.title}</p>
-                  <p className="line-clamp-2" style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>{a.body}</p>
-                  <p style={{ marginTop: 8, fontSize: 11, color: "var(--text-tertiary)" }}>
-                    {new Date(a.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
       </div>
     </main>
   );
 }
-
-
