@@ -5,7 +5,9 @@ service is fully functional locally and in CI. Also provides the routing
 tables (category → department) used by every provider.
 """
 
+import csv
 import re
+from pathlib import Path
 from typing import Optional
 
 from app.models import QueryPriority
@@ -47,6 +49,30 @@ CATEGORY_TO_DEPARTMENT: dict[str, str] = {
     "general": "SA",
 }
 
+
+def _reference_keywords() -> dict[str, list[str]]:
+    """Load department/course vocabulary from the supplied account reference."""
+    path = Path(__file__).resolve().parents[2] / "data" / "classification_reference.csv"
+    if not path.exists():
+        return {}
+
+    department_categories = {
+        "admissions": "admission", "finance": "fee", "examinations": "exam",
+        "technical": "technical", "registrar": "registration",
+    }
+    keywords: dict[str, list[str]] = {}
+    with path.open(newline="", encoding="utf-8-sig") as file:
+        for row in csv.DictReader(file):
+            relation = (row.get("HOD Email Relation") or "").lower()
+            hod_key = relation.split(".")[0]
+            category = department_categories.get(hod_key, "course" if ".hod@" in relation else "general")
+            source = " ".join((row.get("Name") or "", row.get("Role Task") or "", row.get("Priority Assessment Keywords") or ""))
+            keywords.setdefault(category, []).extend(re.findall(r"[a-z0-9]+(?:[- ][a-z0-9]+)*", source.lower()))
+    return keywords
+
+
+REFERENCE_KEYWORDS = _reference_keywords()
+
 # ---------------------------------------------------------------------------
 # Classification
 # ---------------------------------------------------------------------------
@@ -58,10 +84,11 @@ def classify_rules(text: str) -> tuple[str, QueryPriority, float]:
     # "general" is the fallback bucket, not a real category - it never scores.
     best_category = "general"
     best_score = 0
-    for category, keywords in CATEGORY_KEYWORDS.items():
+    all_keywords = {category: keywords + REFERENCE_KEYWORDS.get(category, []) for category, keywords in CATEGORY_KEYWORDS.items()}
+    for category, keywords in all_keywords.items():
         if category == "general":
             continue
-        score = sum(1 for kw in keywords if kw in lowered)
+        score = sum(1 for kw in set(keywords) if len(kw) > 2 and re.search(rf"(?<!\w){re.escape(kw)}(?!\w)", lowered))
         if score > best_score:
             best_score = score
             best_category = category
