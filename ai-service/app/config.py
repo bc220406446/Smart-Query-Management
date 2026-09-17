@@ -30,9 +30,14 @@ class Settings(BaseSettings):
     # How often the escalation scheduler runs, in minutes.
     escalation_poll_minutes: int = 10
 
-    # FR-02: Gmail API poller for email ingestion.
-    # Set GMAIL_CREDENTIALS_JSON (JSON string of service-account or OAuth2 creds)
-    # to enable the poller; leave empty to skip.
+    # FR-02: IMAP inbox receiver. For Gmail use an app password.
+    email_imap_host: str = "imap.gmail.com"
+    email_imap_port: int = 993
+    email_imap_username: str = ""
+    email_imap_password: str = ""
+    email_imap_folder: str = "INBOX"
+    email_ingestion_enabled: bool = False
+    # Kept for compatibility with existing test/config files; IMAP is used now.
     gmail_credentials_json: str = ""
     gmail_poll_minutes: int = 10
     gmail_max_messages: int = 50

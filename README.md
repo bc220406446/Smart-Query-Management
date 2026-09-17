@@ -43,6 +43,23 @@ Configure `ai-service/.env` with the pooled connection:
 DATABASE_URL="postgresql://postgres.<PROJECT_REF>:<PASSWORD>@aws-0-<REGION>.pooler.supabase.com:6543/postgres?pgbouncer=true"
 ```
 
+To receive normal emails as queries, configure the AI service IMAP receiver
+(Gmail users should create an App Password):
+
+```env
+EMAIL_INGESTION_ENABLED=true
+EMAIL_IMAP_HOST=imap.gmail.com
+EMAIL_IMAP_PORT=993
+EMAIL_IMAP_USERNAME=queries@your-domain.com
+EMAIL_IMAP_PASSWORD=<mailbox-app-password>
+EMAIL_IMAP_FOLDER=INBOX
+GMAIL_POLL_MINUTES=1
+```
+
+The AI service checks unread messages, creates an `EMAIL` query, marks the
+message as read only after successful creation, and then the normal AI
+processing scheduler classifies and routes it.
+
 The AI service removes Prisma’s `pgbouncer` query parameter before connecting
 with psycopg and enforces SSL for Supabase.
 
@@ -97,6 +114,28 @@ AI_WEBHOOK_SECRET=<shared-secret>
 
 The endpoint is `POST /api/webhook/ai`; the secret is sent in the
 `x-ai-secret` header.
+
+### Incoming email submission
+
+The web app accepts normalized email payloads at `POST /api/email/ingest`.
+Configure `EMAIL_INGEST_SECRET` and send it in the `x-email-ingest-secret`
+header. The sender is matched to an existing student by email; unknown senders
+still create an unlinked query for staff review.
+
+```json
+{
+  "from": "student@vu.edu.pk",
+  "subject": "Unable to access LMS",
+  "text": "I cannot log in to my LMS account.",
+  "messageId": "provider-message-id",
+  "threadId": "provider-thread-id"
+}
+```
+
+Each accepted message becomes a `SUBMITTED` query with channel `EMAIL`, and
+the existing AI processing pipeline is triggered. An email provider/webhook or
+mailbox poller must call this endpoint; SMTP credentials alone do not receive
+incoming mail.
 
 ## Authentication and email
 

@@ -11,7 +11,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from app.config import settings
 from app.database import SessionLocal
-from app.service import gmail_poll_for_emails, process_pending_queries, run_escalation
+from app.service import imap_poll_for_emails, process_pending_queries, run_escalation
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ def _escalation_job() -> None:
 def _email_ingestion_job() -> None:
     db = SessionLocal()
     try:
-        ingested = gmail_poll_for_emails(
+        ingested = imap_poll_for_emails(
             db,
             label=settings.gmail_label,
             max_messages=settings.gmail_max_messages,
@@ -82,13 +82,12 @@ def start_scheduler() -> BackgroundScheduler:
     )
 
     # FR-02: optional Gmail API poller for email ingestion.
-    if settings.gmail_credentials_json:
+    if settings.email_ingestion_enabled:
         _scheduler.add_job(
             _email_ingestion_job,
             trigger=IntervalTrigger(minutes=settings.gmail_poll_minutes),
             id="email_ingestion",
             replace_existing=True,
-            next_run_time=None,
         )
         logger.info(
             "Email ingestion scheduler started (every %d minutes).",

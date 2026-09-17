@@ -1,7 +1,10 @@
 """Core service operations: process pending queries, run escalation,
 and ingest external channels (e.g. email) into the shared query pipeline."""
 
+import email
+import imaplib
 import logging
+from email.header import decode_header
 from datetime import datetime, timedelta, timezone
 from typing import List
 
@@ -215,6 +218,7 @@ def ingest_email_query(db: Session, subject: str, snippet: str, sender: str, thr
     now = received_at or datetime.now(timezone.utc)
     row = _build_query_from_email(subject, snippet, sender, thread_id, now)
 
+    student = db.scalar(select(User).where(User.email == sender.lower().strip(), User.role == "STUDENT"))
     query = Query(
         id=new_id(),
         ticket_number=new_id(),
@@ -222,7 +226,7 @@ def ingest_email_query(db: Session, subject: str, snippet: str, sender: str, thr
         message=row["message"],
         channel=QueryChannel.EMAIL,
         status=QueryStatus.SUBMITTED,
-        student_id=row["student_id"],
+        student_id=student.id if student else row["student_id"],
         created_at=row["created_at"],
         updated_at=row["updated_at"],
     )
@@ -234,10 +238,60 @@ def ingest_email_query(db: Session, subject: str, snippet: str, sender: str, thr
         "email_ingested",
         "query",
         query.id,
-        {"sender": sender, "thread_id": thread_id},
+        {"sender": sender, "thread_id": thread_id, "matched_student_id": student.id if student else None},
     )
     logger.info("Ingested email query %s from %s", query.id, sender)
     return query.id
+
+
+def imap_poll_for_emails(db: Session, label: str = "INBOX", max_messages: int = 50) -> list[str]:
+    """Read unread IMAP messages and create EMAIL queries."""
+    if not settings.email_ingestion_enabled or not settings.email_imap_username or not settings.email_imap_password:
+        logger.warning("Email ingestion skipped: enable IMAP settings and provide mailbox credentials.")
+        return []
+    mailbox = None
+    ingested: list[str] = []
+    try:
+        mailbox = imaplib.IMAP4_SSL(settings.email_imap_host, settings.email_imap_port)
+        mailbox.login(settings.email_imap_username, settings.email_imap_password)
+        mailbox.select(label or settings.email_imap_folder)
+        _, result = mailbox.search(None, "UNSEEN")
+        logger.info("Email inbox connected; found %d unread message(s).", len(result[0].split()))
+        for message_id in result[0].split()[-max_messages:]:
+            _, parts = mailbox.fetch(message_id, "(RFC822)")
+            raw = next((part[1] for part in parts if isinstance(part, tuple)), None)
+            if not raw:
+                continue
+            message = email.message_from_bytes(raw)
+            sender = email.utils.parseaddr(message.get("From", ""))[1].lower().strip()
+            body = _email_text(message)
+            if not sender or not body:
+                continue
+            message_key = message.get("Message-ID", message_id.decode(errors="ignore"))
+            ingest_email_query(db, _decode_email_header(message.get("Subject", "")) or "Email query", body, sender, message_key)
+            db.commit()
+            mailbox.store(message_id, "+FLAGS", "\\Seen")
+            ingested.append(message_key)
+    except Exception as exc:  # noqa: BLE001
+        db.rollback()
+        logger.exception("Email inbox poller error: %s", exc)
+    finally:
+        if mailbox:
+            try: mailbox.logout()
+            except Exception: pass
+    return ingested
+
+
+def _decode_email_header(value: str) -> str:
+    return "".join(part.decode(charset or "utf-8", errors="replace") if isinstance(part, bytes) else part for part, charset in decode_header(value)).strip()
+
+
+def _email_text(message: email.message.Message) -> str:
+    parts = message.walk() if message.is_multipart() else [message]
+    for part in parts:
+        if part.get_content_type() == "text/plain" and "attachment" not in str(part.get("Content-Disposition", "")):
+            return (part.get_payload(decode=True) or b"").decode(part.get_content_charset() or "utf-8", errors="replace").strip()
+    return ""
 
 
 def gmail_poll_for_emails(db: Session, label: str = "INBOX", max_messages: int = 50) -> list[str]:
