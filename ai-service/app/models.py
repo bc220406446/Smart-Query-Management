@@ -95,6 +95,7 @@ class User(Base):
     name: Mapped[Optional[str]] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255), unique=True)
     email_verified: Mapped[Optional[datetime]] = mapped_column("emailVerified", DateTime(timezone=True))
+    phone: Mapped[Optional[str]] = mapped_column(String(32), unique=True)
     image: Mapped[Optional[str]] = mapped_column(String(1024))
     role: Mapped[Role] = mapped_column(_enum(Role), default=Role.STUDENT)
     department_id: Mapped[Optional[str]] = mapped_column(

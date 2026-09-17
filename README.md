@@ -137,6 +137,16 @@ the existing AI processing pipeline is triggered. An email provider/webhook or
 mailbox poller must call this endpoint; SMTP credentials alone do not receive
 incoming mail.
 
+### Local WhatsApp support account
+
+For local testing, link a dedicated WhatsApp account/number from
+`/admin/whatsapp`. Scan the Baileys QR code in the web server terminal, then
+have students send messages to that linked number. Each incoming personal chat
+becomes a `WHATSAPP` query; group chats are ignored. Do not link a staff
+member's personal number. The connected number is the support inbox and
+outgoing replies are sent from it. This adapter can later be replaced by the
+official WhatsApp Cloud API without changing the query workflow.
+
 ## Authentication and email
 
 Optional web settings include Google OAuth and SMTP email delivery:
@@ -173,3 +183,5 @@ cd ..\ai-service
 
 The web build should pass, and `/health` should report the AI providers and
 database status as available.
+
+For local WhatsApp support, set WA_SUPPORT_NUMBER in the web environment to the dedicated linked Baileys account number. Students must save this number in their profile; incoming messages are matched against User.phone.

@@ -7,7 +7,7 @@ import BrandMark from "@/components/BrandMark";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const ROLE_LINKS: Record<Role, Array<{ href: string; label: string; icon: typeof LayoutDashboard }>> = {
-  [Role.STUDENT]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone }, { href: "/dashboard/queries", label: "Queries", icon: ClipboardList }],
+  [Role.STUDENT]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/dashboard/announcements", label: "Announcements", icon: Megaphone }, { href: "/dashboard/queries", label: "Queries", icon: ClipboardList }, { href: "/dashboard/profile", label: "Profile", icon: Settings2 }],
   [Role.INSTRUCTOR]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/staff/inbox", label: "Inbox", icon: Inbox }],
   [Role.HOD]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/staff/inbox", label: "Inbox", icon: Inbox }, { href: "/hod", label: "HOD Console", icon: ShieldCheck }],
   [Role.ADMIN]: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard }, { href: "/admin", label: "Analytics", icon: BarChart3 }, { href: "/admin/announcements", label: "Announcements", icon: Megaphone }, { href: "/admin/audit", label: "Audit Log", icon: Settings2 }],

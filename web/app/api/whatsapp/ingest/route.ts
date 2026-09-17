@@ -25,13 +25,15 @@ export async function POST(request: Request) {
 
     const { from, body: message, studentId } = parsed.data;
 
+    const normalizedFrom = from.replace(/\D/g, "");
+    const student = await prisma.user.findFirst({ where: { phone: { in: [from, `+${normalizedFrom}`, normalizedFrom] }, role: "STUDENT" }, select: { id: true } });
     const query = await prisma.query.create({
       data: {
         subject: message.slice(0, 140) || "WhatsApp message",
         message,
         channel: QueryChannel.WHATSAPP,
         status: "SUBMITTED",
-        studentId: studentId ?? null,
+        studentId: student?.id ?? studentId ?? null,
       },
     });
 

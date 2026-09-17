@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { connectWhatsApp, setBaileysMaker } from "@/lib/whatsapp";
+import { prisma } from "@/lib/prisma";
+import { recordAudit } from "@/lib/audit";
+import { isUserTextMessage } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -8,9 +11,38 @@ export const dynamic = "force-dynamic";
 function makeBaileys(): boolean {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Baileys = require("@whiskeysockets/baileys").default;
-    if (!Baileys) throw new Error("Baileys default export missing");
-    setBaileysMaker((opts) => new Baileys(opts));
+    const Baileys = require("@whiskeysockets/baileys");
+    const makeWASocket = Baileys.default ?? Baileys.makeWASocket;
+    if (!makeWASocket || !Baileys.useMultiFileAuthState) throw new Error("Baileys socket factory missing");
+    setBaileysMaker(async () => {
+      const { state, saveCreds } = await Baileys.useMultiFileAuthState(process.env.WA_SESSION_PATH ?? "./.wa-auth");
+      const socket = makeWASocket({ auth: state, printQRInTerminal: true, browser: ["Smart Query Hub", "Chrome", "1.0.0"] });
+      socket.ev.on("creds.update", saveCreds);
+      socket.ev.on("messages.upsert", async ({ messages, type }: { messages: unknown[]; type: string }) => {
+        if (type !== "notify") return;
+        for (const message of messages) {
+          const normalized = isUserTextMessage(message as Parameters<typeof isUserTextMessage>[0]);
+          if (!normalized || normalized.fromMe) continue;
+          const phone = normalized.from.replace(/\D/g, "");
+          const student = await prisma.user.findFirst({ where: { phone: { in: [normalized.from, `+${phone}`, phone] }, role: "STUDENT" }, select: { id: true } });
+          const query = await prisma.query.create({ data: { subject: normalized.body.slice(0, 140) || "WhatsApp message", message: normalized.body, channel: "WHATSAPP", status: "SUBMITTED", studentId: student?.id ?? null } });
+          await recordAudit({ actorId: null, action: "query_submitted", entityType: "query", entityId: query.id, metadata: { channel: "WHATSAPP", from: normalized.from } });
+          console.info("Created WhatsApp query %s from %s", query.id, normalized.from);
+        }
+      });
+      return {
+        connect: async () => new Promise<void>((resolve, reject) => {
+          const listener = ({ connection, lastDisconnect }: { connection?: string; lastDisconnect?: { error?: Error } }) => {
+            if (connection === "open") { socket.ev.off("connection.update", listener); resolve(); }
+            if (connection === "close") { socket.ev.off("connection.update", listener); reject(lastDisconnect?.error ?? new Error("WhatsApp connection closed")); }
+          };
+          socket.ev.on("connection.update", listener);
+        }),
+        sendMessage: async (to: string, content: unknown) => { await socket.sendMessage(`${to.replace(/\D/g, "")}@s.whatsapp.net`, content); },
+        logout: async () => { await socket.logout(); },
+        ev: { isConnected: () => Boolean(socket.user) },
+      };
+    });
     return true;
   } catch {
     console.error("Could not initialize Baileys");
