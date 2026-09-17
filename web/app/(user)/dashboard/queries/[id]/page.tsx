@@ -30,19 +30,6 @@ export default async function QueryDetailPage({
 
   return (
     <main className="container-page" style={{ maxWidth: 880 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 8,
-        }}
-      >
-        <span className="mono-sm">Ticket #{query.ticketNumber.slice(0, 8)}</span>
-        <StatusBadge status={query.status} />
-        <PriorityBadge priority={query.priority} />
-      </div>
-
       <h1
         style={{
           fontSize: 24,
@@ -55,22 +42,24 @@ export default async function QueryDetailPage({
         {query.subject}
       </h1>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          fontSize: 12,
-          color: "var(--text-tertiary)",
-          marginBottom: 20,
-        }}
-      >
-        <span>Submitted {new Date(query.createdAt).toLocaleString()}</span>
-        <span>
-          Routed to {query.assignedTo?.name ?? "-"} (
-          {query.department?.name ?? "unassigned"})
-        </span>
-      </div>
+      <p className="page-subtitle" style={{ marginBottom: 20 }}>
+        Your submitted query and conversation history.
+      </p>
+
+      <section className="query-info-card card" aria-labelledby="query-info-heading">
+        <div className="query-section-kicker">Query overview</div>
+        <h2 id="query-info-heading" className="card-title">Query Information</h2>
+        <div className="query-info-grid">
+          <div><span className="query-meta-label">Ticket No.</span><span className="mono-sm">#{query.ticketNumber.slice(0, 8)}</span></div>
+          <div><span className="query-meta-label">Submit Channel</span><span>{query.channel}</span></div>
+          <div><span className="query-meta-label">Priority</span><PriorityBadge priority={query.priority} /></div>
+          <div><span className="query-meta-label">Status</span><StatusBadge status={query.status} /></div>
+          <div><span className="query-meta-label">Submission Date</span><span>{new Date(query.createdAt).toLocaleDateString()}</span></div>
+          <div><span className="query-meta-label">Submission Time</span><span>{new Date(query.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span></div>
+          <div><span className="query-meta-label">Assigned To</span><span>{query.assignedTo?.name ?? "Pending assignment"}</span></div>
+          <div><span className="query-meta-label">Department</span><span>{query.department?.name ?? "Pending classification"}</span></div>
+        </div>
+      </section>
 
       {submitted === "1" && (
         <div className="success-box" style={{ marginBottom: 20 }}>

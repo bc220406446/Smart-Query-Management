@@ -19,7 +19,7 @@ from typing import Optional
 
 from app.config import settings
 from app.models import QueryPriority
-from app.pipeline.rules import classify_rules, format_prompt
+from app.pipeline.rules import classify_rules, department_code_for_query, format_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ class ClassificationResult:
     confidence: float
     summary: str
     provider: str
+    department_code: Optional[str] = None
 
 
 def _parse_model_output(raw: str) -> Optional[dict]:
@@ -85,7 +86,7 @@ class GeminiProvider:
                 ).text
             else:
                 return None
-            return _to_result(raw, provider="gemini")
+            return _to_result(raw, provider="gemini", text=text)
         except Exception as exc:  # noqa: BLE001 - fall back on any provider error
             logger.warning("Gemini classification failed: %s", exc)
             return None
@@ -117,13 +118,13 @@ class ClaudeProvider:
                 messages=[{"role": "user", "content": prompt}],
             )
             raw = "".join(block.text for block in msg.content if getattr(block, "type", "") == "text")
-            return _to_result(raw, provider="claude")
+            return _to_result(raw, provider="claude", text=text)
         except Exception as exc:  # noqa: BLE001
             logger.warning("Claude classification failed: %s", exc)
             return None
 
 
-def _to_result(raw: str, provider: str) -> Optional[ClassificationResult]:
+def _to_result(raw: str, provider: str, text: str = "") -> Optional[ClassificationResult]:
     data = _parse_model_output(raw)
     if not data:
         return None
@@ -145,6 +146,7 @@ def _to_result(raw: str, provider: str) -> Optional[ClassificationResult]:
         confidence=confidence,
         summary=str(data.get("summary", category)),
         provider=provider,
+        department_code=department_code_for_query(text, category),
     )
 
 
@@ -176,4 +178,5 @@ def classify_text(text: str) -> ClassificationResult:
         confidence=confidence,
         summary=f"rule-based classification: {category}",
         provider="rules",
+        department_code=department_code_for_query(text, category),
     )

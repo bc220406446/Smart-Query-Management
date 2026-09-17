@@ -47,11 +47,9 @@ def _find_department(
 ) -> Optional[Department]:
     code = CATEGORY_TO_DEPARTMENT.get(category)
     if code:
-        return db.scalar(select(Department).where(Department.code == code))
+        return db.scalar(select(Department).where(Department.code == (department_name or code)))
     if department_name:
-        return db.scalar(
-            select(Department).where(Department.name.ilike(f"%{department_name}%"))
-        )
+        return db.scalar(select(Department).where(Department.code == department_name)) or db.scalar(select(Department).where(Department.name.ilike(f"%{department_name}%")))
     return None
 
 

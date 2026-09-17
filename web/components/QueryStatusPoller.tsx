@@ -25,9 +25,10 @@ export default function QueryStatusPoller({
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    if (!supabaseUrl || !supabaseKey) {
-      // Fallback: light polling (no new dependency).
-      const timer = setInterval(async () => {
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const startPolling = () => {
+      if (timer) return;
+      timer = setInterval(async () => {
         try {
           const res = await fetch(`/api/my-queries?id=${queryId}`, { cache: "no-store" });
           if (res.ok) {
@@ -40,7 +41,11 @@ export default function QueryStatusPoller({
           /* retry next tick */
         }
       }, 8000);
-      return () => clearInterval(timer);
+    };
+
+    if (!supabaseUrl || !supabaseKey) {
+      startPolling();
+      return () => { if (timer) clearInterval(timer); };
     }
 
     // Supabase Realtime path (production).
@@ -51,9 +56,7 @@ export default function QueryStatusPoller({
       const SupabaseModule = require("@supabase/supabase-js");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const supabase = (SupabaseModule as any).createClient(supabaseUrl, supabaseKey);
-      chan = supabase
-      chan = supabase
-        .channel(`query:${queryId}`)
+      chan = supabase.channel(`query:${queryId}`)
         .on(
           "postgres_changes",
           {
@@ -70,18 +73,27 @@ export default function QueryStatusPoller({
             if (row.status && row.status !== currentStatus) router.refresh();
           }
         )
-        .subscribe(() => {
+        .subscribe((status: string) => {
+          if (status === "SUBSCRIBED") {
+            setLive(true);
+            setLastChecked(new Date());
+          } else if (["CHANNEL_ERROR", "TIMED_OUT", "CLOSED"].includes(status)) {
+            setLive(false);
+            startPolling();
+          }
           unsub = () => {
             try { (chan as { unsubscribe?: () => void }).unsubscribe?.(); } catch {}
           };
         });
     } catch {
-      console.warn("Supabase Realtime subscribe failed; falling back to polling:");
+      console.warn("Supabase Realtime subscribe failed; falling back to polling.");
       queueMicrotask(() => setLive(false));
+      startPolling();
     }
 
     return () => {
       try { unsub?.(); } catch {}
+      if (timer) clearInterval(timer);
     };
   }, [queryId, currentStatus, router]);
 

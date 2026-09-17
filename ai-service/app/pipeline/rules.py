@@ -38,16 +38,30 @@ PRIORITY_KEYWORDS: list[tuple[QueryPriority, list[str]]] = [
 
 CATEGORY_TO_DEPARTMENT: dict[str, str] = {
     "admission": "ADM",
-    "registration": "CS",
+    "registration": "REG",
     "exam": "EXAM",
     "result": "EXAM",
-    "fee": "BA",
+    "fee": "FIN",
     "course": "CS",
-    "technical": "CS",
+    "technical": "TECH",
     "complaint": "SA",
     "leave": "SA",
     "general": "SA",
 }
+
+COURSE_CODE_DEPARTMENTS = {
+    "CS": "CS", "MGT": "MGT", "ECO": "ECO", "EDU": "EDU", "ENG": "ENG",
+    "MCM": "MCM", "ISL": "ISL", "MTH": "MTH", "PAK": "PAK", "PHY": "PHY",
+    "PSY": "PSY", "PAD": "PAD", "SOC": "SOC", "STA": "STA", "URD": "URD",
+}
+
+
+def department_code_for_query(text: str, category: str) -> str | None:
+    """Resolve the department first; course instructors are never random."""
+    code_match = re.search(r"\b([A-Z]{2,5})[- ]?\d{3}\b", text.upper())
+    if code_match and code_match.group(1) in COURSE_CODE_DEPARTMENTS:
+        return COURSE_CODE_DEPARTMENTS[code_match.group(1)]
+    return CATEGORY_TO_DEPARTMENT.get(category)
 
 
 def _reference_keywords() -> dict[str, list[str]]:
@@ -84,11 +98,11 @@ def classify_rules(text: str) -> tuple[str, QueryPriority, float]:
     # "general" is the fallback bucket, not a real category - it never scores.
     best_category = "general"
     best_score = 0
-    all_keywords = {category: keywords + REFERENCE_KEYWORDS.get(category, []) for category, keywords in CATEGORY_KEYWORDS.items()}
-    for category, keywords in all_keywords.items():
+    for category, keywords in CATEGORY_KEYWORDS.items():
         if category == "general":
             continue
-        score = sum(1 for kw in set(keywords) if len(kw) > 2 and re.search(rf"(?<!\w){re.escape(kw)}(?!\w)", lowered))
+        score = sum(2 for kw in set(keywords) if len(kw) > 2 and re.search(rf"(?<!\w){re.escape(kw)}(?!\w)", lowered))
+        score += sum(1 for kw in set(REFERENCE_KEYWORDS.get(category, [])) if len(kw) > 2 and re.search(rf"(?<!\w){re.escape(kw)}(?!\w)", lowered))
         if score > best_score:
             best_score = score
             best_category = category

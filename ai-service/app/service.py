@@ -61,7 +61,7 @@ def process_pending_queries(db: Session, limit: int = 10) -> List[str]:
 
         result = classify_text(query.message)
         department_id, assigned_to_id = route_query(
-            db, result.category, getattr(query, "_department_name", None)
+            db, result.category, result.department_code or getattr(query, "_department_name", None)
         )
         draft = draft_reply(query, result.category, result.priority)
 
