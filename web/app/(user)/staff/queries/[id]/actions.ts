@@ -13,7 +13,7 @@ import { notifyUser } from "@/lib/notify";
 async function loadAssignableQuery(queryId: string) {
   const user = await requireRole([...STAFF_ROLES]);
   const query = await prisma.query.findFirst({
-    where: { id: queryId, OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] } }] },
+    where: { id: queryId, OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD", "FORWARDED_TO_STAFF"] } }] },
   });
   if (!query) throw new Error("Query not found or not assigned to you.");
   return { user, query };
@@ -22,7 +22,7 @@ async function loadAssignableQuery(queryId: string) {
 /** FR-05: staff sends a reply; the query moves to RESOLVED. */
 export async function sendReply(queryId: string, formData: FormData): Promise<void> {
   const { user, query } = await loadAssignableQuery(queryId);
-  if (query.status !== "SUBMITTED" && query.status !== "ASSIGNED" && query.status !== "IN_PROGRESS") {
+  if (user.role !== "HOD" && user.role !== "ADMIN" && query.status !== "SUBMITTED" && query.status !== "ASSIGNED" && query.status !== "IN_PROGRESS") {
     redirect(`/staff/queries/${queryId}?error=${encodeURIComponent("This query has already been forwarded to the HOD and cannot receive another staff reply.")}`);
   }
 
@@ -123,4 +123,18 @@ export async function forwardToHod(queryId: string, formData: FormData): Promise
   revalidatePath("/staff/inbox");
   revalidatePath("/hod");
   revalidatePath("/dashboard");
+}
+
+export async function forwardFromHod(queryId: string, formData: FormData): Promise<void> {
+  const { user, query } = await loadAssignableQuery(queryId);
+  if (user.role !== "HOD" && user.role !== "ADMIN") redirect(`/staff/queries/${queryId}?error=Only%20HOD%20users%20can%20forward%20this%20query.`);
+  const parsed = replySchema.safeParse({ body: formData.get("body") });
+  const assignedToId = String(formData.get("assignedToId") || "");
+  if (!parsed.success || !assignedToId) redirect(`/staff/queries/${queryId}?error=Select%20a%20recipient%20and%20add%20a%20reply.`);
+  await prisma.$transaction([
+    prisma.reply.create({ data: { queryId: query.id, authorId: user.id, body: `[Forwarded by HOD]\n${parsed.data.body}` } }),
+    prisma.query.update({ where: { id: query.id }, data: { status: "FORWARDED_TO_STAFF", assignedToId, escalatedAt: null } }),
+  ]);
+  await recordAudit({ actorId: user.id, action: "hod_forwarded_query", entityType: "query", entityId: query.id, metadata: { assignedToId } });
+  revalidatePath(`/staff/queries/${query.id}`); revalidatePath("/staff/inbox"); revalidatePath("/hod"); revalidatePath("/dashboard");
 }

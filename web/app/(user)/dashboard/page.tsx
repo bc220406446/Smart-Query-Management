@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { QueryStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { StatusBadge } from "@/components/QueryStatusBadge";
@@ -15,8 +16,10 @@ const statCards = (label: string, value: number) => (
 export default async function DashboardPage() {
   const user = await requireUser();
   const isStaff = ["INSTRUCTOR", "HOD", "ADMIN"].includes(user.role);
+  const profile = isStaff ? await prisma.user.findUnique({ where: { id: user.id }, select: { departmentId: true } }) : null;
+  const hodOpenStatuses = [QueryStatus.SUBMITTED, QueryStatus.ASSIGNED, QueryStatus.IN_PROGRESS, QueryStatus.FORWARDED_TO_HOD, QueryStatus.AUTO_ESCALATED, QueryStatus.HOD_ESCALATED, QueryStatus.FORWARDED_TO_STAFF];
 
-  const [myQueries, resolvedCount, forwardedCount, inProgressCount] = await Promise.all([
+  const [myQueries, resolvedCount, forwardedCount, inProgressCount, assignedCount, departmentAssignedCount, departmentResolvedCount, departmentOpenCount] = await Promise.all([
     prisma.query.findMany({
       where: isStaff ? { assignedToId: user.id } : { studentId: user.id },
       orderBy: { createdAt: "desc" },
@@ -30,6 +33,10 @@ export default async function DashboardPage() {
     }),
     prisma.query.count({ where: isStaff ? { assignedToId: user.id, status: "FORWARDED_TO_HOD" } : { studentId: user.id, status: "FORWARDED_TO_HOD" } }),
     prisma.query.count({ where: isStaff ? { assignedToId: user.id, status: "IN_PROGRESS" } : { studentId: user.id, status: "IN_PROGRESS" } }),
+    prisma.query.count({ where: { assignedToId: user.id } }),
+    prisma.query.count({ where: profile?.departmentId ? { departmentId: profile.departmentId } : { id: "__no_department__" } }),
+    prisma.query.count({ where: profile?.departmentId ? { departmentId: profile.departmentId, status: "RESOLVED" } : { id: "__no_department__" } }),
+    prisma.query.count({ where: profile?.departmentId ? { departmentId: profile.departmentId, status: { in: hodOpenStatuses } } : { id: "__no_department__" } }),
   ]);
 
   return (
@@ -48,9 +55,9 @@ export default async function DashboardPage() {
       </div>
 
       <div className="stats-grid dashboard-stat-grid">
-        {statCards("Total resolved", resolvedCount)}
-        {statCards("Total forwarded", forwardedCount)}
-        {statCards("Total in progress", inProgressCount)}
+        {user.role === "HOD" ? statCards("Total department assigned", departmentAssignedCount) : statCards(isStaff ? "Total assigned" : "Total resolved", isStaff ? assignedCount : resolvedCount)}
+        {user.role === "HOD" ? statCards("Total resolved", departmentResolvedCount) : statCards(isStaff ? "Total resolved" : "Total forwarded", isStaff ? resolvedCount : forwardedCount)}
+        {user.role === "HOD" ? statCards("Total open", departmentOpenCount) : statCards(isStaff ? "Total forwarded" : "Total in progress", isStaff ? forwardedCount : inProgressCount)}
       </div>
 
       <div className="dashboard-sections">

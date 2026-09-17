@@ -1,0 +1,17 @@
+"use client";
+
+import { useState } from "react";
+import { forwardFromHod, forwardToHod, sendReply } from "@/app/(user)/staff/queries/[id]/actions";
+
+type Recipient = { id: string; name: string | null; role: string };
+
+export default function QueryHandlingActions({ queryId, aiDraftReply, recipients, isHod }: { queryId: string; aiDraftReply: string | null; recipients: Recipient[]; isHod: boolean }) {
+  const [mode, setMode] = useState<"resolve" | "forward" | null>(null);
+  const draft = aiDraftReply ?? "";
+  const emptyReply = "";
+  const forwardAction = isHod ? forwardFromHod : forwardToHod;
+  return <>
+    <div className="query-actions-bar"><button type="button" className="btn btn-primary" onClick={() => setMode("resolve")}>Resolve</button><button type="button" className="btn btn-secondary" onClick={() => setMode("forward")}>Forward</button></div>
+    {mode && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setMode(null)}><section className="modal card" role="dialog" aria-modal="true" aria-labelledby="query-action-title"><div className="modal-header"><div><h2 id="query-action-title" className="card-title">{mode === "resolve" ? "Resolve query" : "Forward query"}</h2><p className="page-subtitle">Generate an AI response or write your own reply.</p></div><button type="button" className="btn btn-ghost btn-sm" aria-label="Close action dialog" onClick={() => setMode(null)}>×</button></div>{mode === "resolve" ? <form action={sendReply.bind(null, queryId)}><div className="field"><label htmlFor="resolve-body" className="field-label">Reply</label><textarea id="resolve-body" name="body" className="field-textarea" rows={7} required defaultValue={emptyReply} placeholder="Write a reply to the student." /></div><input type="hidden" name="status" value="RESOLVED" /><div className="modal-actions"><button type="button" className="btn btn-secondary" onClick={() => setMode(null)}>Cancel</button><button type="button" className="btn btn-outline-brand" onClick={(event) => { const area = event.currentTarget.form?.querySelector<HTMLTextAreaElement>("textarea"); if (area) area.value = draft; }}>Generate AI Draft</button><button type="submit" className="btn btn-primary">Submit and resolve</button></div></form> : <form action={forwardAction.bind(null, queryId)}>{isHod && <div className="field"><label htmlFor="forward-recipient" className="field-label">Assign to</label><select id="forward-recipient" name="assignedToId" className="field-select" required><option value="">Select staff or HOD</option>{recipients.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipient.name ?? "Unnamed"} ({recipient.role})</option>)}</select></div>}<div className="field"><label htmlFor="forward-body" className="field-label">Reply with forwarding</label><textarea id="forward-body" name="body" className="field-textarea" rows={7} required defaultValue={emptyReply} placeholder="Explain the query and why it is being forwarded." /></div><div className="modal-actions"><button type="button" className="btn btn-secondary" onClick={() => setMode(null)}>Cancel</button><button type="button" className="btn btn-outline-brand" onClick={(event) => { const area = event.currentTarget.form?.querySelector<HTMLTextAreaElement>("textarea"); if (area) area.value = draft; }}>Generate AI Response</button><button type="submit" className="btn btn-primary">Forward query</button></div></form>}</section></div>}
+  </>;
+}

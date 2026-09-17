@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/roles";
 import { StatusBadge } from "@/components/QueryStatusBadge";
 import { overrideQuery } from "./actions";
+import HodQueryTable from "@/components/HodQueryTable";
 
 export const dynamic = "force-dynamic";
 
@@ -37,12 +38,7 @@ export default async function HodConsolePage({
     data: { status: "AUTO_ESCALATED", escalatedAt: new Date() },
   });
 
-  const [escalated, openQueries, assignees] = await Promise.all([
-    prisma.query.findMany({
-      where: user.role === Role.ADMIN ? { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] } } : { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] }, assignedTo: { hodId: user.id } },
-      orderBy: { escalatedAt: "desc" },
-      include: { student: { select: { name: true } }, assignedTo: { select: { name: true } } },
-    }),
+  const [openQueries, assignees] = await Promise.all([
     prisma.query.findMany({
       where: user.role === Role.ADMIN ? { status: { in: ["SUBMITTED", "ASSIGNED", "IN_PROGRESS"] } } : { status: { in: ["SUBMITTED", "ASSIGNED", "IN_PROGRESS"] }, assignedTo: { hodId: user.id } },
       orderBy: { createdAt: "asc" },
@@ -55,6 +51,7 @@ export default async function HodConsolePage({
       select: { id: true, name: true, role: true },
     }),
   ]);
+  const escalated = openQueries;
 
   function OverrideForm({ query }: { query: (typeof openQueries)[number] }) {
     return (
@@ -121,7 +118,7 @@ export default async function HodConsolePage({
         <div className="page-header-left">
           <h1 className="page-title">HOD Console</h1>
           <p className="page-subtitle">
-            FR-07 escalated queries and FR-09 override / reassignment authority.
+            Review open queries and escalate them to your HOD inbox when needed.
           </p>
         </div>
       </div>
@@ -132,7 +129,7 @@ export default async function HodConsolePage({
         </div>
       )}
 
-      <section style={{ marginTop: 8 }}>
+      {false && <section style={{ marginTop: 8 }}>
         <h2
           style={{
             fontSize: 14,
@@ -205,66 +202,13 @@ export default async function HodConsolePage({
             </ul>
           )}
         </div>
-      </section>
+      </section>}
 
       <section style={{ marginTop: 28 }}>
         <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
           Open queries
         </h2>
-        <div className="table-wrap">
-          {openQueries.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-state-icon" aria-hidden="true">-</span>
-              No open queries.
-            </div>
-          ) : (
-            <ul style={{ listStyle: "none", margin: 0, padding: "8px 0" }}>
-              {openQueries.map((q) => (
-                <li
-                  key={q.id}
-                  className="card"
-                  style={{
-                    padding: "12px 14px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 12,
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p
-                        style={{
-                          fontWeight: 500,
-                          color: "var(--text-primary)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          marginBottom: 4,
-                        }}
-                      >
-                        {q.subject}
-                      </p>
-                      <p className="mono-sm">
-                        {q.student?.name ?? "Anonymous"} ·{" "}
-                        {q.assignedTo?.name ?? "unassigned"} ·
-                        {new Date(q.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <StatusBadge status={q.status} />
-                  </div>
-                  <OverrideForm query={q} />
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <HodQueryTable queries={openQueries.map((q) => ({ id: q.id, subject: q.subject, student: q.student?.name ?? "Anonymous", assignedTo: q.assignedTo?.name ?? "Unassigned", priority: q.priority, status: q.status, message: q.message, createdAt: q.createdAt.toISOString() }))} />
       </section>
     </main>
   );

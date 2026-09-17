@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/roles";
 import { STAFF_ROLES } from "@/lib/roles";
 import { PriorityBadge, StatusBadge } from "@/components/QueryStatusBadge";
-import { sendReply } from "./actions";
+import QueryHandlingActions from "@/components/QueryHandlingActions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ export default async function StaffQueryDetailPage({
   const { error } = await searchParams;
 
   const query = await prisma.query.findFirst({
-    where: { id, OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD"] } }] },
+    where: { id, OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD", "FORWARDED_TO_STAFF"] } }] },
     include: {
       student: { select: { name: true, email: true } },
       replies: { orderBy: { createdAt: "asc" }, include: { author: { select: { name: true } } } },
@@ -28,56 +28,56 @@ export default async function StaffQueryDetailPage({
   });
 
   if (!query) notFound();
+  const hiddenDraft = query?.aiDraftReply;
+  const displayCategory = query?.category;
+  const displayConfidence = query?.confidence;
+
+  const recipients = user.role === "HOD" || user.role === "ADMIN" ? await prisma.user.findMany({ where: user.role === "ADMIN" ? { role: { in: ["INSTRUCTOR", "HOD"] } } : { OR: [{ role: "INSTRUCTOR", hodId: user.id }, { role: "HOD" }] }, orderBy: { name: "asc" }, select: { id: true, name: true, role: true } }) : [];
 
   const resolved = query.status === "RESOLVED";
-  const canRespond = !resolved && !["FORWARDED_TO_HOD", "AUTO_ESCALATED", "HOD_ESCALATED"].includes(query.status);
+  const canRespond = !resolved && (user.role === "HOD" || user.role === "ADMIN" || !["FORWARDED_TO_HOD", "AUTO_ESCALATED", "HOD_ESCALATED"].includes(query.status));
 
   return (
     <main className="container-page" style={{ maxWidth: 880 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 8,
-        }}
-      >
-        <span className="mono-sm">Ticket #{query.ticketNumber.slice(0, 8)}</span>
-        <StatusBadge status={query.status} />
-        <PriorityBadge priority={query.priority} />
-      </div>
-
       <h1
         style={{
           fontSize: 24,
           fontWeight: 600,
           color: "var(--text-primary)",
-          margin: "0 0 6px",
+          margin: "0 0 12px",
           letterSpacing: "-0.01em",
         }}
       >
         {query.subject}
       </h1>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-          fontSize: 12,
-          color: "var(--text-tertiary)",
-          marginBottom: 20,
-          flexWrap: "wrap",
-        }}
-      >
-        <span>
-          From {query.student?.name ?? "Anonymous"} (
-          {query.student?.email ?? "no email"})
-        </span>
-        <span>{query.department?.name ?? "Unassigned"}</span>
-        <span>{query.channel} channel</span>
-        <span>Submitted {new Date(query.createdAt).toLocaleString()}</span>
-      </div>
+      <section className="ai-classification-card card" aria-labelledby="classification-heading">
+        <div className="query-section-kicker">AI insight</div>
+        <h2 id="classification-heading" className="card-title">AI Classification Overview</h2>
+        <div className="query-info-grid ai-classification-grid">
+          <div><span className="query-meta-label">Detected classification</span><strong>{displayCategory ?? "Pending classification"}</strong></div>
+          <div><span className="query-meta-label">Confidence</span><strong>{displayConfidence != null ? `${(displayConfidence * 100).toFixed(0)}%` : "Not available"}</strong></div>
+        </div>
+      </section>
+
+      <section className="query-info-card card" aria-labelledby="query-info-heading">
+        <div className="query-section-kicker">Submitted query</div>
+        <h2 id="query-info-heading" className="card-title">Student Info</h2>
+        <div className="query-student-meta">
+        <div><span className="query-meta-label">Student Name</span><strong>{query.student?.name ?? "Anonymous"}</strong></div>
+        <div><span className="query-meta-label">Student Email</span><strong>{query.student?.email ?? "No email available"}</strong></div>
+        <div><span className="query-meta-label">Department</span><strong>{query.department?.name ?? "Unassigned"}</strong></div>
+        </div>
+        <div className="query-subsection-title">Query Info</div>
+        <div className="query-info-grid">
+          <div><span className="query-meta-label">Ticket No.</span><span className="mono-sm">#{query.ticketNumber.slice(0, 8)}</span></div>
+          <div><span className="query-meta-label">Submit Channel</span><span>{query.channel}</span></div>
+          <div><span className="query-meta-label">Priority</span><PriorityBadge priority={query.priority} /></div>
+          <div><span className="query-meta-label">Status</span><StatusBadge status={query.status} /></div>
+          <div><span className="query-meta-label">Submission Date</span><span>{new Date(query.createdAt).toLocaleDateString()}</span></div>
+          <div><span className="query-meta-label">Submission Time</span><span>{new Date(query.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</span></div>
+        </div>
+      </section>
 
       {error && (
         <div className="error-box" style={{ marginBottom: 16 }}>
@@ -85,7 +85,9 @@ export default async function StaffQueryDetailPage({
         </div>
       )}
 
-      {query.category && (
+      
+
+      {false && displayCategory && (
         <div
           style={{
             display: "inline-flex",
@@ -103,11 +105,11 @@ export default async function StaffQueryDetailPage({
             letterSpacing: "0.04em",
           }}
         >
-          {query.category}
-          {query.confidence != null && (
+          {displayCategory}
+          {displayConfidence != null && (
             <span style={{ color: "var(--text-tertiary)" }}>
               ·
-              {(query.confidence * 100).toFixed(0)}% confidence
+              {((displayConfidence ?? 0) * 100).toFixed(0)}% confidence
             </span>
           )}
         </div>
@@ -129,7 +131,7 @@ export default async function StaffQueryDetailPage({
         </p>
       </div>
 
-      {query.aiDraftReply && !resolved && (
+      {false && hiddenDraft && !resolved && (
         <div
           className="card"
           style={{
@@ -155,7 +157,7 @@ export default async function StaffQueryDetailPage({
             </span>
             <span className="caption">AI reply is prefilled below for editing</span>
           </div>
-          <p style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.6, color: "var(--text-primary)" }}>{query.aiDraftReply}</p>
+          <p style={{ whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.6, color: "var(--text-primary)" }}>{hiddenDraft}</p>
         </div>
       )}
 
@@ -218,26 +220,7 @@ export default async function StaffQueryDetailPage({
         )}
       </div>
 
-      {canRespond && (
-        <div className="staff-query-actions">
-        <form action={sendReply.bind(null, query.id)} className="card staff-action-card">
-          <div className="field">
-            <label htmlFor="body" className="field-label">Reply to student</label>
-            <textarea
-              id="body"
-              name="body"
-              required
-              minLength={1}
-              rows={6}
-              className="field-textarea"
-              defaultValue={query.aiDraftReply ?? ""}
-              placeholder="Accept the AI draft or write your own reply."
-            />
-          </div>
-          <div className="staff-action-footer"><select id="reply-status" name="status" className="field-select" defaultValue="RESOLVED"><option value="RESOLVED">Resolved</option><option value="IN_PROGRESS">In progress</option><option value="FORWARDED_TO_HOD">Forwarded to HOD</option></select><button type="submit" className="btn btn-primary">Update query</button></div>
-        </form>
-        </div>
-      )}
+      {canRespond && <QueryHandlingActions queryId={query.id} aiDraftReply={query.aiDraftReply} recipients={recipients} isHod={user.role === "HOD" || user.role === "ADMIN"} />}
     </main>
   );
 }

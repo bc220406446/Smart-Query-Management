@@ -65,3 +65,19 @@ export async function overrideQuery(formData: FormData): Promise<void> {
   revalidatePath("/dashboard");
   revalidatePath("/admin");
 }
+
+export async function escalateQuery(queryId: string): Promise<void> {
+  const user = await requireRole([Role.HOD, Role.ADMIN]);
+  const query = await prisma.query.findUnique({ where: { id: queryId } });
+  if (!query) redirect("/hod?error=Query%20not%20found.");
+
+  const updated = await prisma.query.update({
+    where: { id: queryId },
+    data: { status: "HOD_ESCALATED", escalatedAt: new Date() },
+  });
+  if (updated.studentId) await notifyUser({ userId: updated.studentId, type: "status_update", title: "Your query was escalated to the HOD", body: updated.subject });
+  await recordAudit({ actorId: user.id, action: "hod_escalated", entityType: "query", entityId: queryId });
+  revalidatePath("/hod");
+  revalidatePath("/staff/inbox");
+  revalidatePath("/dashboard");
+}
