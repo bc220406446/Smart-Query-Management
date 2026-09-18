@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 /**
  * FR-06: real-time status tracking.
@@ -49,13 +50,10 @@ export default function QueryStatusPoller({
     }
 
     // Supabase Realtime path (production).
-    let chan: unknown = null;
+    let chan: { unsubscribe?: () => void } | null = null;
     let unsub: (() => void) | null = null;
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const SupabaseModule = require("@supabase/supabase-js");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const supabase = (SupabaseModule as any).createClient(supabaseUrl, supabaseKey);
+      const supabase = getSupabaseBrowserClient(supabaseUrl, supabaseKey);
       chan = supabase.channel(`query:${queryId}`)
         .on(
           "postgres_changes",
@@ -82,12 +80,17 @@ export default function QueryStatusPoller({
             startPolling();
           }
           unsub = () => {
-            try { (chan as { unsubscribe?: () => void }).unsubscribe?.(); } catch {}
+            try { chan?.unsubscribe?.(); } catch {}
           };
         });
     } catch {
-      console.warn("Supabase Realtime subscribe failed; falling back to polling.");
-      queueMicrotask(() => setLive(false));
+      // Realtime requires the `queries` table to be enabled in Supabase's
+      // realtime publication. Polling remains a supported fallback when it is
+      // unavailable, so do not surface a noisy browser warning to users.
+      queueMicrotask(() => {
+        setLive(false);
+        setLastChecked(new Date());
+      });
       startPolling();
     }
 

@@ -26,7 +26,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" data-theme={initialTheme} suppressHydrationWarning>
+    <html lang="en" data-theme={initialTheme} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className={session?.user ? "antialiased app-shell" : "antialiased"}>
         {session?.user ? <NavBar user={session.user} /> : null}
         <PageTransition>{children}</PageTransition>
