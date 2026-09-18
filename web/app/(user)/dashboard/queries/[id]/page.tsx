@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { PriorityBadge, StatusBadge } from "@/components/QueryStatusBadge";
 import QueryStatusPoller from "@/components/QueryStatusPoller";
+import { splitIncomingQuery } from "@/lib/query-submission";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function QueryDetailPage({
   });
 
   if (!query) notFound();
+  const display = splitIncomingQuery(query.subject, query.message);
 
   return (
     <main className="container-page" style={{ maxWidth: 880 }}>
@@ -39,7 +41,7 @@ export default async function QueryDetailPage({
           letterSpacing: "-0.01em",
         }}
       >
-        {query.subject}
+        {display.subject}
       </h1>
 
       <p className="page-subtitle" style={{ marginBottom: 20 }}>
@@ -81,7 +83,7 @@ export default async function QueryDetailPage({
             color: "var(--text-primary)",
           }}
         >
-          {query.message}
+          {display.message}
         </p>
       </div>
 

@@ -33,6 +33,12 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# WhatsApp login sessions and Puppeteer/browser cache (never commit secrets)
+/.wa-auth*/
+/.wwebjs-auth/
+/.wwebjs_cache/
+/.cache/
+
 # vercel
 .vercel
 

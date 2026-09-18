@@ -1,68 +1,70 @@
 import { NextResponse } from "next/server";
-import { connectWhatsApp, setBaileysMaker } from "@/lib/whatsapp";
+import { connectWhatsApp, isUserTextMessage, setWhatsAppMaker } from "@/lib/whatsapp";
 import { prisma } from "@/lib/prisma";
 import { recordAudit } from "@/lib/audit";
-import { isUserTextMessage } from "@/lib/whatsapp";
+import { splitIncomingQuery } from "@/lib/query-submission";
 
 export const dynamic = "force-dynamic";
+let initialized = false;
 
-// Lazy-init the Baileys maker on first connect so that `npm run dev` works even
-// when @whiskeysockets/baileys is installed but not otherwise imported.
-function makeBaileys(): boolean {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const Baileys = require("@whiskeysockets/baileys");
-    const makeWASocket = Baileys.default ?? Baileys.makeWASocket;
-    if (!makeWASocket || !Baileys.useMultiFileAuthState) throw new Error("Baileys socket factory missing");
-    setBaileysMaker(async () => {
-      const { state, saveCreds } = await Baileys.useMultiFileAuthState(process.env.WA_SESSION_PATH ?? "./.wa-auth");
-      const socket = makeWASocket({ auth: state, printQRInTerminal: true, browser: ["Smart Query Hub", "Chrome", "1.0.0"] });
-      socket.ev.on("creds.update", saveCreds);
-      socket.ev.on("messages.upsert", async ({ messages, type }: { messages: unknown[]; type: string }) => {
-        if (type !== "notify") return;
-        for (const message of messages) {
-          const normalized = isUserTextMessage(message as Parameters<typeof isUserTextMessage>[0]);
-          if (!normalized || normalized.fromMe) continue;
-          const phone = normalized.from.replace(/\D/g, "");
-          const student = await prisma.user.findFirst({ where: { phone: { in: [normalized.from, `+${phone}`, phone] }, role: "STUDENT" }, select: { id: true } });
-          const query = await prisma.query.create({ data: { subject: normalized.body.slice(0, 140) || "WhatsApp message", message: normalized.body, channel: "WHATSAPP", status: "SUBMITTED", studentId: student?.id ?? null } });
-          await recordAudit({ actorId: null, action: "query_submitted", entityType: "query", entityId: query.id, metadata: { channel: "WHATSAPP", from: normalized.from } });
-          console.info("Created WhatsApp query %s from %s", query.id, normalized.from);
-        }
-      });
-      return {
-        connect: async () => new Promise<void>((resolve, reject) => {
-          const listener = ({ connection, lastDisconnect }: { connection?: string; lastDisconnect?: { error?: Error } }) => {
-            if (connection === "open") { socket.ev.off("connection.update", listener); resolve(); }
-            if (connection === "close") { socket.ev.off("connection.update", listener); reject(lastDisconnect?.error ?? new Error("WhatsApp connection closed")); }
-          };
-          socket.ev.on("connection.update", listener);
-        }),
-        sendMessage: async (to: string, content: unknown) => { await socket.sendMessage(`${to.replace(/\D/g, "")}@s.whatsapp.net`, content); },
-        logout: async () => { await socket.logout(); },
-        ev: { isConnected: () => Boolean(socket.user) },
-      };
+async function initializeWhatsApp() {
+  if (initialized) return;
+  const { Client, LocalAuth } = await import("whatsapp-web.js");
+  const qr = await import("qrcode-terminal");
+  const qrTerminal = qr.default ?? qr;
+  setWhatsAppMaker(() => {
+    let ready = false;
+    const client = new Client({
+      authStrategy: new LocalAuth({ dataPath: process.env.WA_SESSION_PATH ?? "./.wa-auth" }),
+      puppeteer: {
+        headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      },
     });
-    return true;
-  } catch {
-    console.error("Could not initialize Baileys");
-    return false;
-  }
+    client.on("qr", (code: string) => { console.log("Scan this WhatsApp QR code:"); qrTerminal.generate(code, { small: true }); });
+    client.on("ready", () => { ready = true; console.info("WhatsApp support account is ready."); });
+    client.on("message", async (message: { from: string; body: string; fromMe: boolean; isGroupMsg: boolean; getContact?: () => Promise<{ number?: string; id?: { _serialized?: string; user?: string } }> }) => {
+      // WhatsApp may deliver a privacy-preserving LID such as 12345@lid.
+      // Resolve it through the contact record before matching User.phone.
+      let sender = message.from;
+      try {
+        const contact = await message.getContact?.() ?? await client.getContactById(message.from);
+        console.info("WhatsApp contact resolution", {
+          incoming: message.from,
+          number: contact?.number,
+          id: contact?.id?._serialized ?? contact?.id?.user,
+        });
+        // For LID chats, contact.number can still be the LID. The real
+        // WhatsApp phone is available in the serialized contact id.
+        const contactPhone = contact?.id?._serialized?.split("@")[0] || contact?.number;
+        if (contactPhone) sender = contactPhone;
+      } catch { /* keep the original sender id */ }
+      const normalized = isUserTextMessage({ ...message, from: sender });
+      if (!normalized || normalized.fromMe) return;
+      const phone = normalized.from.replace(/\D/g, "");
+      const student = await prisma.user.findFirst({
+        where: { phone: { in: [normalized.from, `+${phone}`, phone] }, role: "STUDENT" },
+        select: { id: true, phone: true },
+      });
+      const submission = splitIncomingQuery(undefined, normalized.body);
+      const query = await prisma.query.create({ data: { subject: submission.subject, message: submission.message, channel: "WHATSAPP", status: "SUBMITTED", studentId: student?.id ?? null } });
+      await recordAudit({ actorId: null, action: "query_submitted", entityType: "query", entityId: query.id, metadata: { channel: "WHATSAPP", from: normalized.from } });
+      console.info("Created WhatsApp query %s from %s; matched student %s (stored phone %s)", query.id, normalized.from, student?.id ?? "none", student?.phone ?? "none");
+    });
+    return {
+      connect: async () => { await client.initialize(); },
+      sendMessage: async (to: string, content: unknown) => { await client.sendMessage(`${to.replace(/\D/g, "")}@c.us`, String((content as { text?: string }).text ?? content)); },
+      logout: async () => { await client.destroy(); ready = false; },
+      ev: { isConnected: () => ready },
+    };
+  });
+  initialized = true;
 }
 
 export async function POST() {
-  if (!makeBaileys()) {
-    return NextResponse.json({ error: "Baileys unavailable - install @whiskeysockets/baileys" }, { status: 503 });
-  }
-  try {
-    await connectWhatsApp();
-    return NextResponse.json({ ok: true, status: "connected" });
-  } catch (err) {
-    console.error("WhatsApp connect error:", err);
-    return NextResponse.json({ error: "Could not connect" }, { status: 500 });
-  }
+  try { await initializeWhatsApp(); void connectWhatsApp().catch((error) => console.error("WhatsApp connect error:", error)); return NextResponse.json({ ok: true, status: "pairing_started" }, { status: 202 }); }
+  catch (error) { console.error("Could not initialize WhatsApp:", error); return NextResponse.json({ error: "WhatsApp unavailable" }, { status: 503 }); }
 }
 
-export async function GET() {
-  return NextResponse.json({ status: "ready" });
-}
+export async function GET() { return NextResponse.json({ status: "ready" }); }

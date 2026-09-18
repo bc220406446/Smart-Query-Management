@@ -1,55 +1,42 @@
 /**
- * WhatsApp integration (FR-02 / FR-08) using @whiskeysockets/baileys.
+ * WhatsApp integration (FR-02 / FR-08) using whatsapp-web.js.
  *
  * Wires a long-running WhatsApp listener into the Next web app so incoming
  * WhatsApp messages are normalized into `queries` rows (channel = WHATSAPP)
  * and the AI pipeline picks them up automatically. Staff can also reply from
  * the staff detail page using the same socket.
  *
- * NOTE: Baileys is unofficial and can trigger account warnings/suspension on
- * repeated use. For production prefer the official WhatsApp Cloud API; this is
- * acceptable for a FYP/demo environment.
+ * NOTE: whatsapp-web.js is intended for local/demo use. For production prefer
+ * the official WhatsApp Cloud API.
  */
 
-import type { WAMessage } from "@whiskeysockets/baileys";
+type WhatsAppInst = { connect: () => Promise<void>; sendMessage: (to: string, content: unknown) => Promise<void>; logout: () => Promise<void>; ev?: { isConnected?: () => boolean } };
+type WhatsAppMaker = () => WhatsAppInst | Promise<WhatsAppInst>;
 
-// Baileys types are exported via the default import; declare the maker shape loosely.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type BaileysInst = { connect: () => Promise<void>; sendMessage: (to: string, content: any) => Promise<void>; logout: () => Promise<void>; ev?: { isConnected?: () => boolean } };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type BaileysMaker = (opts: any) => BaileysInst | Promise<BaileysInst>;
-
-let _maker: BaileysMaker | null = null;
-let _inst: BaileysInst | null = null;
+let _maker: WhatsAppMaker | null = null;
+let _inst: WhatsAppInst | null = null;
 let _ready: Promise<void> | null = null;
 
 /**
- * Configure the Baileys maker. Call once at server startup with the
- * `@whiskeysockets/baileys` default export (or your preferred maker).
+ * Configure the WhatsApp client maker once at server startup.
  */
-export function setBaileysMaker(maker: BaileysMaker) {
+export function setWhatsAppMaker(maker: WhatsAppMaker) {
   _maker = maker;
 }
 
 /** Connect (or reconnect) the WhatsApp socket. Returns once connected. */
 export async function connectWhatsApp(pushName = "SmartQueryHub") {
-  if (!_maker) throw new Error("Baileys maker not configured - call setBaileysMaker first.");
+  if (!_maker) throw new Error("WhatsApp maker not configured - call setWhatsAppMaker first.");
   if (_inst && _inst.ev?.isConnected?.()) return _ready!;
 
-  const inst = await _maker({
-    // Use a session cache so the connection survives restarts.
-    // In production, persist `cache.json` to disk and reload it.
-    ...(process.env.WA_SESSION_PATH
-      ? { sessionCache: { type: "memory", data: {} } }
-      : {}),
-  });
+  const inst = await _maker();
   _inst = inst;
 
   _ready = (async () => {
     await inst.connect();
     // Mark the profile name in WhatsApp contacts so outgoing messages look branded.
     if ("updateProfileName" in inst) {
-      try { (inst as BaileysInst & { updateProfileName?: (name: string) => Promise<void> }).updateProfileName?.(pushName); } catch { /* ignore */ }
+      try { (inst as WhatsAppInst & { updateProfileName?: (name: string) => Promise<void> }).updateProfileName?.(pushName); } catch { /* ignore */ }
     }
   })();
 
@@ -65,8 +52,8 @@ export async function disconnectWhatsApp() {
   _ready = null;
 }
 
-/** Current Baileys instance, connecting first if needed. */
-export async function getInst(): Promise<BaileysInst> {
+/** Current WhatsApp instance, connecting first if needed. */
+export async function getInst(): Promise<WhatsAppInst> {
   if (!_inst || !_ready) await connectWhatsApp();
   await _ready;
   if (!_inst) throw new Error("WhatsApp not connected");
@@ -80,14 +67,13 @@ export async function sendWhatsAppReply(to: string, text: string) {
 }
 
 /** Basic QA: is this message from a personal chat (not group) and text-ish? */
-export function isUserTextMessage(msg: WAMessage) {
-  const content = msg.message?.conversation ?? msg.message?.extendedTextMessage?.text;
+export function isUserTextMessage(msg: { from?: string; body?: string; isGroupMsg?: boolean; fromMe?: boolean }) {
+  const content = msg.body;
   if (!content || typeof content !== "string") return null;
-  const from = msg.key?.remoteJid;
-  // Skip group messages (remoteJid ends with @g.us).
-  if (from && from.endsWith("@g.us")) return null;
+  const from = msg.from;
+  if (msg.isGroupMsg) return null;
   if (!from) return null;
-  return { from, body: content.trim(), fromMe: !!msg.key?.fromMe };
+  return { from, body: content.trim(), fromMe: Boolean(msg.fromMe) };
 }
 
 /**

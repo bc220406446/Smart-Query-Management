@@ -12,7 +12,7 @@ function push(entry: { from: string; body: string }) {
   if (LOG.length > MAX) LOG.pop();
 }
 
-// The Baileys listener calls this when a message arrives (via a server-only hook
+// The WhatsApp listener calls this when a message arrives (via a server-only hook
 // or a small standalone script). For the demo console, we expose a writable
 // endpoint so the console can simulate incoming messages by POSTing here.
 export async function POST(request: Request) {

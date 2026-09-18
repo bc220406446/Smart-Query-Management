@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { PriorityBadge, StatusBadge } from "@/components/QueryStatusBadge";
 import QueryModal from "@/components/QueryModal";
+import { splitIncomingQuery } from "@/lib/query-submission";
 
 export const dynamic = "force-dynamic";
 
@@ -46,14 +47,16 @@ export default async function MyQueriesPage() {
             </thead>
             <tbody>
               {queries.map((q) => (
-                <tr key={q.id}>
+                (() => {
+                  const display = splitIncomingQuery(undefined, q.message);
+                  return <tr key={q.id}>
                   <td className="mono-sm">#{q.ticketNumber.slice(0, 8)}</td>
                   <td>
                     <Link
                       href={`/dashboard/queries/${q.id}`}
                       className="table-link"
                     >
-                      {q.subject}
+                      {splitIncomingQuery(q.subject, q.message).subject}
                     </Link>
                   </td>
                   <td style={{ color: "var(--text-secondary)" }}>
@@ -68,7 +71,8 @@ export default async function MyQueriesPage() {
                   <td className="mono-sm">
                     {new Date(q.createdAt).toLocaleDateString()}
                   </td>
-                </tr>
+                  </tr>;
+                })()
               ))}
             </tbody>
           </table>

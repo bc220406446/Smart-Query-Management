@@ -3,6 +3,7 @@ import { z } from "zod";
 import { QueryChannel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { recordAudit } from "@/lib/audit";
+import { splitIncomingQuery } from "@/lib/query-submission";
 import {} from "@/lib/whatsapp";
 // createQueryFromWhatsApp / WhatsAppUserMap imported for future use.
 
@@ -29,8 +30,7 @@ export async function POST(request: Request) {
     const student = await prisma.user.findFirst({ where: { phone: { in: [from, `+${normalizedFrom}`, normalizedFrom] }, role: "STUDENT" }, select: { id: true } });
     const query = await prisma.query.create({
       data: {
-        subject: message.slice(0, 140) || "WhatsApp message",
-        message,
+        ...splitIncomingQuery(undefined, message),
         channel: QueryChannel.WHATSAPP,
         status: "SUBMITTED",
         studentId: student?.id ?? studentId ?? null,
