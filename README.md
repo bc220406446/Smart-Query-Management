@@ -185,3 +185,4 @@ The web build should pass, and `/health` should report the AI providers and
 database status as available.
 
 For local WhatsApp support, set WA_SUPPORT_NUMBER in the web environment to the dedicated linked Baileys account number. Students must save this number in their profile; incoming messages are matched against User.phone.
+Invoke-RestMethod -Uri "http://localhost:3000/api/whatsapp/connect" -Method POST  

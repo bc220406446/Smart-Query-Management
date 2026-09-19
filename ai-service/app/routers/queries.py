@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -6,8 +7,35 @@ from app.database import get_db
 from app.models import Query
 from app.schemas import EscalationResult, ProcessRequest, ProcessResult, QueryOut
 from app.service import process_pending_queries, run_escalation
+from app.pipeline.drafts import draft_reply
+from app.models import QueryPriority
 
 router = APIRouter(prefix="/queries", tags=["queries"])
+
+
+class DraftRequest(BaseModel):
+    subject: str
+    message: str
+    category: str = "general"
+    priority: str = "NORMAL"
+    action: str = "resolve"
+    recipient: str = ""
+
+
+@router.post("/draft")
+def generate_draft(req: DraftRequest) -> dict[str, str]:
+    try:
+        priority = QueryPriority(req.priority.upper())
+    except ValueError:
+        priority = QueryPriority.NORMAL
+
+    # Reuse the same provider chain as automatic query processing.
+    class DraftQuery:
+        id = "manual-draft"
+        subject = req.subject
+        message = req.message
+
+    return {"draft": draft_reply(DraftQuery(), req.category, priority, req.action, req.recipient)}
 
 
 @router.post("/process", response_model=ProcessResult)

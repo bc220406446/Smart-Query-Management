@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminAnalyticsPage() {
   await requireRole([Role.ADMIN]);
 
-  const [byStatus, byDept, recentQueries, total, open, resolved, escalated] =
+  const [byStatus, byDept, recentQueries, total, resolved] =
     await Promise.all([
       prisma.query.groupBy({ by: ["status"], _count: { _all: true } }),
       prisma.query.groupBy({ by: ["departmentId"], _count: { _all: true } }),
@@ -19,14 +19,8 @@ export default async function AdminAnalyticsPage() {
       }),
       prisma.query.count(),
       prisma.query.count({
-        where: {
-          status: { in: ["SUBMITTED", "ASSIGNED", "IN_PROGRESS"] },
-        },
-      }),
-      prisma.query.count({
         where: { status: "RESOLVED" },
       }),
-      prisma.query.count({ where: { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED"] } } }),
     ]);
 
   const departments = await prisma.department.findMany();
@@ -55,10 +49,9 @@ export default async function AdminAnalyticsPage() {
   }
 
   const stats = [
-    { label: "Total queries", value: total },
-    { label: "Open", value: open },
+    { label: "Submitted", value: total },
     { label: "Resolved", value: resolved },
-    { label: "Escalated", value: escalated },
+    { label: "Open", value: total - resolved },
   ];
 
   return (

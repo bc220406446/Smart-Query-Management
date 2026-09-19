@@ -78,16 +78,18 @@ export function DeptBar({
   data: Array<{ name: string; count: number }>;
 }) {
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={data}>
+    <ResponsiveContainer width="100%" height={Math.max(280, data.length * 42)}>
+      <BarChart data={data} layout="vertical" margin={{ top: 8, right: 20, left: 8, bottom: 8 }}>
         <CartesianGrid
           strokeDasharray="3 3"
           stroke="var(--border-light)"
         />
-        <XAxis dataKey="name" tick={{ fill: "var(--text-tertiary)", fontSize: 11 }} />
+        <XAxis type="number" allowDecimals={false} tick={{ fill: "var(--text-tertiary)", fontSize: 11 }} />
         <YAxis
+          type="category"
+          dataKey="name"
+          width={100}
           tick={{ fill: "var(--text-tertiary)", fontSize: 11 }}
-          allowDecimals={false}
         />
         <Tooltip
           contentStyle={{
@@ -103,7 +105,7 @@ export function DeptBar({
           dataKey="count"
           name="Queries"
           fill="var(--brand-500)"
-          radius={[4, 4, 0, 0]}
+          radius={[0, 4, 4, 0]}
         />
       </BarChart>
     </ResponsiveContainer>

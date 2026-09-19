@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/roles";
 import { StatusBadge } from "@/components/QueryStatusBadge";
 import { VolumeLine } from "@/components/AnalyticsCharts";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,16 @@ const statCards = (label: string, value: number) => (
 
 export default async function DashboardPage() {
   const user = await requireUser();
+  if (user.role === "HOD") redirect("/hod");
+  if (user.role === "ADMIN") redirect("/admin");
+  if (user.role === "INSTRUCTOR") redirect("/staff");
   const isStaff = ["INSTRUCTOR", "HOD", "ADMIN"].includes(user.role);
   const profile = isStaff ? await prisma.user.findUnique({ where: { id: user.id }, select: { departmentId: true } }) : null;
   const hodOpenStatuses = [QueryStatus.SUBMITTED, QueryStatus.ASSIGNED, QueryStatus.IN_PROGRESS, QueryStatus.FORWARDED_TO_HOD, QueryStatus.AUTO_ESCALATED, QueryStatus.HOD_ESCALATED, QueryStatus.FORWARDED_TO_STAFF];
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-  const [myQueries, resolvedCount, forwardedCount, inProgressCount, assignedCount, departmentAssignedCount, departmentResolvedCount, departmentOpenCount, adminTotalCount, adminResolvedCount, adminOpenCount, adminVolumeQueries] = await Promise.all([
+  const [myQueries, resolvedCount, forwardedCount, inProgressCount, assignedCount, departmentAssignedCount, departmentResolvedCount, departmentOpenCount, adminTotalCount, adminResolvedCount, adminOpenCount, adminVolumeQueries, studentAssignedCount, studentOpenCount] = await Promise.all([
     prisma.query.findMany({
       where: isStaff ? { assignedToId: user.id } : { studentId: user.id },
       orderBy: { createdAt: "desc" },
@@ -44,6 +48,8 @@ export default async function DashboardPage() {
     prisma.query.count({ where: { status: "RESOLVED" } }),
     prisma.query.count({ where: { status: { not: "RESOLVED" } } }),
     prisma.query.findMany({ where: { createdAt: { gte: sevenDaysAgo } }, select: { createdAt: true } }),
+    prisma.query.count({ where: { studentId: user.id, status: "ASSIGNED" } }),
+    prisma.query.count({ where: { studentId: user.id, status: { not: "RESOLVED" } } }),
   ]);
 
   const volume: Array<{ date: string; count: number }> = [];
@@ -69,12 +75,12 @@ export default async function DashboardPage() {
       </div>
 
       <div className="stats-grid dashboard-stat-grid">
-        {user.role === "ADMIN" ? statCards("Total queries", adminTotalCount) : user.role === "HOD" ? statCards("Total department assigned", departmentAssignedCount) : statCards(isStaff ? "Total assigned" : "Total resolved", isStaff ? assignedCount : resolvedCount)}
-        {user.role === "ADMIN" ? statCards("Resolved queries", adminResolvedCount) : user.role === "HOD" ? statCards("Total resolved", departmentResolvedCount) : statCards(isStaff ? "Total resolved" : "Total forwarded", isStaff ? resolvedCount : forwardedCount)}
-        {user.role === "ADMIN" ? statCards("Open queries", adminOpenCount) : user.role === "HOD" ? statCards("Total open", departmentOpenCount) : statCards(isStaff ? "Total forwarded" : "Total in progress", isStaff ? forwardedCount : inProgressCount)}
+        {statCards(isStaff ? "Total assigned" : "Assigned", isStaff ? assignedCount : studentAssignedCount)}
+        {statCards(isStaff ? "Total resolved" : "Resolved", isStaff ? resolvedCount : resolvedCount)}
+        {statCards(isStaff ? "Total forwarded" : "Open", isStaff ? forwardedCount : studentOpenCount)}
       </div>
 
-      {user.role === "ADMIN" ? <section className="card dashboard-volume-card"><div className="card-header"><span className="card-title">Volume - last 7 days</span></div><VolumeLine data={volume} /></section> : <div className="dashboard-sections">
+      <div className="dashboard-sections">
         <section className="dashboard-full-section">
           <h3 style={{ marginBottom: 16 }}>
             {isStaff ? "Recently assigned" : "Recent queries"}
@@ -107,7 +113,7 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-      </div>}
+      </div>
     </main>
   );
 }

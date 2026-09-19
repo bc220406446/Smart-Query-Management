@@ -19,6 +19,33 @@ async function loadAssignableQuery(queryId: string) {
   return { user, query };
 }
 
+export async function generateAiDraft(queryId: string, action: "resolve" | "forward" = "resolve"): Promise<string> {
+  await requireRole([...STAFF_ROLES]);
+  const query = await prisma.query.findUnique({ where: { id: queryId } });
+  if (!query) throw new Error("Query not found.");
+  const response = await fetch(`${process.env.AI_SERVICE_URL ?? "http://localhost:8000"}/queries/draft`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subject: query.subject, message: query.message, category: query.category ?? "general", priority: query.priority, action }),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error("AI draft service is unavailable.");
+  const data = (await response.json()) as { draft?: string };
+  if (!data.draft) throw new Error("AI did not return a draft.");
+  return data.draft;
+}
+
+export async function deleteQuery(queryId: string): Promise<void> {
+  const user = await requireRole(["ADMIN"]);
+  const query = await prisma.query.findUnique({ where: { id: queryId }, select: { id: true, subject: true } });
+  if (!query) redirect("/admin/queries?error=Query%20not%20found.");
+  await prisma.query.delete({ where: { id: queryId } });
+  await recordAudit({ actorId: user.id, action: "query_deleted", entityType: "query", entityId: queryId, metadata: { subject: query.subject } });
+  revalidatePath("/admin/queries");
+  revalidatePath("/admin");
+  redirect("/admin/queries?deleted=1");
+}
+
 /** FR-05: staff sends a reply; the query moves to RESOLVED. */
 export async function sendReply(queryId: string, formData: FormData): Promise<void> {
   const { user, query } = await loadAssignableQuery(queryId);

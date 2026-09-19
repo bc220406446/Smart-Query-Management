@@ -14,7 +14,10 @@ const benefits = [
 
 export default async function Home() {
   const session = await auth();
-  if (session?.user) redirect("/dashboard");
+  if (session?.user) {
+    const role = session.user.role;
+    redirect(role === "STUDENT" ? "/dashboard" : role === "INSTRUCTOR" ? "/staff" : role === "HOD" ? "/hod" : "/admin");
+  }
 
   return (
     <main className="landing-community-page">

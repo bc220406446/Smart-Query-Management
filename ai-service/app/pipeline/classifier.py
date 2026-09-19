@@ -2,11 +2,9 @@
 
 Provider chain, LangChain-style orchestration:
 
-1. Gemini (google-genai SDK, optionally wrapped by LangChain) - fast + cheap.
-2. Claude (anthropic SDK) - used when Gemini output is low-confidence/ambiguous
-   or unavailable.
-3. Rule-based keyword classifier - always available; keeps the system fully
-   functional without API keys (local dev, CI, demos).
+1. Local reference/rules classifier - always used for category, intent,
+   department, and priority routing.
+2. Gemini/Claude are reserved for natural-language reply drafting.
 
 Each provider is optional: the SDK import happens lazily inside the provider's
 __init__, so the service runs even when the AI dependencies are not installed.
@@ -34,8 +32,16 @@ class ClassificationResult:
     department_code: Optional[str] = None
 
 
-def _parse_model_output(raw: str) -> Optional[dict]:
+def _parse_model_output(raw: object) -> Optional[dict]:
     """Best-effort JSON parse of an LLM reply."""
+    if isinstance(raw, list):
+        # Some google-genai response versions expose text parts as a list.
+        raw = "".join(
+            part if isinstance(part, str) else str(getattr(part, "text", part))
+            for part in raw
+        )
+    if not isinstance(raw, str):
+        raw = str(raw)
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
@@ -151,32 +157,13 @@ def _to_result(raw: str, provider: str, text: str = "") -> Optional[Classificati
 
 
 def classify_text(text: str) -> ClassificationResult:
-    """Orchestrate the provider chain; always returns a result."""
-    gemini = GeminiProvider()
-    claude = ClaudeProvider()
-
-    if gemini.available:
-        result = gemini.classify(text)
-        if result and result.confidence >= 0.7:
-            return result
-        if result:
-            logger.info("Gemini confidence %.2f - consulting Claude.", result.confidence)
-        if claude.available:
-            claude_result = claude.classify(text)
-            if claude_result:
-                return claude_result
-
-    if claude.available:
-        result = claude.classify(text)
-        if result:
-            return result
-
+    """Classify locally so routing is deterministic and department-safe."""
     category, priority, confidence = classify_rules(text)
     return ClassificationResult(
         category=category,
         priority=priority,
         confidence=confidence,
         summary=f"rule-based classification: {category}",
-        provider="rules",
+        provider="local_rules",
         department_code=department_code_for_query(text, category),
     )

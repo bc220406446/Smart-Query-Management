@@ -3,21 +3,15 @@ import {
   Page,
   Text,
   View,
-  Font,
   renderToBuffer,
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { Prisma } from "@prisma/client";
 
-Font.register({
-  family: "Inter",
-  src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLYNXjHNPa9hlvg.woff2",
-});
-
 const styles = StyleSheet.create({
   page: {
     padding: 36,
-    fontFamily: "Inter",
+    fontFamily: "Helvetica",
     fontSize: 9,
     color: "#1a1d23",
   },
@@ -105,7 +99,7 @@ function PageHeader() {
         <Text style={styles.title}>Smart Query Hub - Query Report</Text>
         <Text style={styles.subtitle}>Generated {new Date().toLocaleString()}</Text>
       </View>
-      <Text style={styles.subtitle}>Smart Query Routing &amp; Email Automation System - FYP</Text>
+      <Text style={styles.subtitle}>Smart Query Routing &amp; Email Automation System</Text>
     </View>
   );
 }
@@ -131,11 +125,12 @@ function QueryRowComponent({ row }: { row: QueryRow }) {
       <Text style={styles.cell}>{row.subject}</Text>
       <Text style={styles.cell}>{row.student?.name ?? "-"}</Text>
       <Text style={styles.cell}>{row.department?.name ?? "-"}</Text>
-      <View style={styles.cell}>          <View style={[styles.statusBadge, { backgroundColor: statusColor(row.status) + "30", borderColor: statusColor(row.status), borderWidth: 1 }]}>
-            <Text style={{ color: statusColor(row.status), fontSize: 7, fontWeight: "bold", textTransform: "uppercase" }}>
-              {row.status}
-            </Text>
-          </View>
+      <View style={styles.cell}>
+        <View style={[styles.statusBadge, { backgroundColor: statusColor(row.status) + "30", borderColor: statusColor(row.status), borderWidth: 1 }]}>
+          <Text style={{ color: statusColor(row.status), fontSize: 7, fontWeight: "bold", textTransform: "uppercase" }}>
+            {row.status}
+          </Text>
+        </View>
       </View>
       <Text style={[styles.cell, styles.cellMono]}>{row.priority}</Text>
       <Text style={[styles.cell, styles.cellMono, styles.small]}>

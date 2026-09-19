@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # deterministic rule-based classifier so the service always works locally.
     gemini_api_key: str = ""
     anthropic_api_key: str = ""
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-3.6-flash"
     claude_model: str = "claude-sonnet-4-20250514"
 
     # Optional callback to the Next.js webhook with classification results.

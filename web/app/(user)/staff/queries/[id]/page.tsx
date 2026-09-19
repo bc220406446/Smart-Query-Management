@@ -4,6 +4,8 @@ import { requireRole } from "@/lib/roles";
 import { STAFF_ROLES } from "@/lib/roles";
 import { PriorityBadge, StatusBadge } from "@/components/QueryStatusBadge";
 import QueryHandlingActions from "@/components/QueryHandlingActions";
+import ReportExportActions from "@/components/ReportExportActions";
+import { deleteQuery } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -12,14 +14,16 @@ export default async function StaffQueryDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; from?: string }>;
 }) {
   const user = await requireRole([...STAFF_ROLES]);
   const { id } = await params;
-  const { error } = await searchParams;
+  const { error, from } = await searchParams;
 
   const query = await prisma.query.findFirst({
-    where: { id, OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD", "FORWARDED_TO_STAFF"] } }] },
+    where: user.role === "ADMIN"
+      ? { id }
+      : { id, OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD", "FORWARDED_TO_STAFF"] } }] },
     include: {
       student: { select: { name: true, email: true } },
       replies: { orderBy: { createdAt: "asc" }, include: { author: { select: { name: true } } } },
@@ -35,7 +39,7 @@ export default async function StaffQueryDetailPage({
   const recipients = user.role === "HOD" || user.role === "ADMIN" ? await prisma.user.findMany({ where: user.role === "ADMIN" ? { role: { in: ["INSTRUCTOR", "HOD"] } } : { OR: [{ role: "INSTRUCTOR", hodId: user.id }, { role: "HOD" }] }, orderBy: { name: "asc" }, select: { id: true, name: true, role: true } }) : [];
 
   const resolved = query.status === "RESOLVED";
-  const canRespond = !resolved && (user.role === "HOD" || user.role === "ADMIN" || !["FORWARDED_TO_HOD", "AUTO_ESCALATED", "HOD_ESCALATED"].includes(query.status));
+  const canRespond = from !== "all-queries" && user.role !== "ADMIN" && !resolved && (user.role === "HOD" || !["FORWARDED_TO_HOD", "AUTO_ESCALATED", "HOD_ESCALATED"].includes(query.status));
 
   return (
     <main className="container-page" style={{ maxWidth: 880 }}>
@@ -220,6 +224,7 @@ export default async function StaffQueryDetailPage({
         )}
       </div>
 
+      <div className="modal-actions" style={{ marginTop: 20 }}><ReportExportActions queryId={query.id} />{user.role === "ADMIN" && <form action={deleteQuery.bind(null, query.id)}><button type="submit" className="btn btn-danger">Delete query</button></form>}</div>
       {canRespond && <QueryHandlingActions queryId={query.id} aiDraftReply={query.aiDraftReply} recipients={recipients} isHod={user.role === "HOD" || user.role === "ADMIN"} />}
     </main>
   );
