@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { sendWhatsAppReply } from "@/lib/whatsapp";
 
 /** FR-08: in-app notification row (shown via the bell / dashboard). */
 export async function notifyUser(params: {
@@ -7,6 +8,7 @@ export async function notifyUser(params: {
   title: string;
   body?: string;
 }) {
+  if (!params.userId) return null;
   return prisma.notification.create({
     data: {
       userId: params.userId,
@@ -15,6 +17,16 @@ export async function notifyUser(params: {
       body: params.body ?? null,
     },
   });
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>'\"]/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "'": "&#39;",
+    '\"': "&quot;",
+  })[character] ?? character);
 }
 
 /**
@@ -52,4 +64,57 @@ export async function sendEmailNotification(params: {
     console.error("sendEmailNotification failed:", err);
     return null;
   }
+}
+
+/**
+ * FR-08: deliver one notification through every enabled channel available to
+ * the user. Delivery is best-effort: a failed email or WhatsApp send must not
+ * prevent the query transaction or the in-app notification from completing.
+ */
+export async function notifyUserAcrossChannels(params: {
+  userId: string;
+  type: string;
+  title: string;
+  body?: string;
+  queryId?: string;
+  subject?: string;
+  details?: string;
+  status?: string;
+}) {
+  if (!params.userId) return null;
+
+  const notification = await notifyUser(params);
+  const user = await prisma.user.findUnique({
+    where: { id: params.userId },
+    select: { email: true, phone: true },
+  });
+  if (!user) return notification;
+
+  const rawBody = params.details ?? params.body ?? params.title;
+  const extractedSubject = rawBody.match(/^"([^"\n]+)"/)?.[1];
+  const subject = params.subject ?? extractedSubject ?? "Query update";
+  const details = params.details ?? params.body ?? params.title;
+  const status = params.status ?? params.title;
+  const whatsappBody = `Subject: ${subject}\nDetails: ${details}\nStatus: ${status}`;
+  const emailBody = `Subject: ${subject}\nDetails: ${details}\nStatus: ${status}`;
+  const deliveries = await Promise.allSettled([
+    user.email
+      ? sendEmailNotification({
+          to: user.email,
+          subject: "Your Query Status has been updated",
+          html: `<p>${escapeHtml(emailBody).replace(/\n/g, "<br />")}</p>`,
+        })
+      : Promise.resolve(null),
+    user.phone
+      ? sendWhatsAppReply(user.phone, whatsappBody)
+      : Promise.resolve(),
+  ]);
+
+  for (const delivery of deliveries) {
+    if (delivery.status === "rejected") {
+      console.error("FR-08 notification delivery failed:", delivery.reason);
+    }
+  }
+
+  return notification;
 }

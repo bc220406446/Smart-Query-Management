@@ -8,7 +8,7 @@ import { STAFF_ROLES } from "@/lib/roles";
 import { replySchema } from "@/lib/validation";
 import { QueryStatus } from "@prisma/client";
 import { recordAudit } from "@/lib/audit";
-import { notifyUser } from "@/lib/notify";
+import { notifyUserAcrossChannels } from "@/lib/notify";
 
 async function loadAssignableQuery(queryId: string) {
   const user = await requireRole([...STAFF_ROLES]);
@@ -49,7 +49,7 @@ export async function deleteQuery(queryId: string): Promise<void> {
 /** FR-05: staff sends a reply; the query moves to RESOLVED. */
 export async function sendReply(queryId: string, formData: FormData): Promise<void> {
   const { user, query } = await loadAssignableQuery(queryId);
-  if (user.role !== "HOD" && user.role !== "ADMIN" && query.status !== "SUBMITTED" && query.status !== "ASSIGNED" && query.status !== "IN_PROGRESS") {
+  if (user.role !== "HOD" && user.role !== "ADMIN" && query.status !== "SUBMITTED" && query.status !== "ASSIGNED" && query.status !== "IN_PROGRESS" && query.status !== "FORWARDED_TO_STAFF") {
     redirect(`/staff/queries/${queryId}?error=${encodeURIComponent("This query has already been forwarded to the HOD and cannot receive another staff reply.")}`);
   }
 
@@ -72,11 +72,15 @@ export async function sendReply(queryId: string, formData: FormData): Promise<vo
     }),
   ]);
 
-  await notifyUser({
+  await notifyUserAcrossChannels({
     userId: query.studentId ?? "",
     type: "status_update",
     title: status === "FORWARDED_TO_HOD" ? "Your query was forwarded to the HOD" : "Your query status was updated",
     body: status === "RESOLVED" ? `"${query.subject}" has been resolved.` : `"${query.subject}" is now ${status.replace("_", " ").toLowerCase()}.`,
+    queryId: query.id,
+    subject: query.subject,
+    details: query.message,
+    status: status.replace("_", " "),
   });
   await recordAudit({
     actorId: user.id,
@@ -113,11 +117,15 @@ export async function approveAiDraft(queryId: string): Promise<void> {
     }),
   ]);
 
-  await notifyUser({
+  await notifyUserAcrossChannels({
     userId: query.studentId ?? "",
     type: "status_update",
     title: "Your query was answered",
     body: `"${query.subject}" has been resolved.`,
+    queryId: query.id,
+    subject: query.subject,
+    details: query.message,
+    status: "RESOLVED",
   });
   await recordAudit({
     actorId: user.id,
@@ -144,7 +152,7 @@ export async function forwardToHod(queryId: string, formData: FormData): Promise
     prisma.reply.create({ data: { queryId: query.id, authorId: user.id, body: `[Forwarded to HOD]\n${parsed.data.body}` } }),
     prisma.query.update({ where: { id: query.id }, data: { status: "FORWARDED_TO_HOD" } }),
   ]);
-  if (query.studentId) await notifyUser({ userId: query.studentId, type: "status_update", title: "Your query was forwarded to the HOD", body: query.subject });
+  if (query.studentId) await notifyUserAcrossChannels({ userId: query.studentId, type: "status_update", title: "Your query was forwarded to the HOD", body: query.subject, queryId: query.id, subject: query.subject, details: query.message, status: "FORWARDED TO HOD" });
   await recordAudit({ actorId: user.id, action: "query_forwarded_to_hod", entityType: "query", entityId: query.id });
   revalidatePath(`/staff/queries/${query.id}`);
   revalidatePath("/staff/inbox");
@@ -162,6 +170,14 @@ export async function forwardFromHod(queryId: string, formData: FormData): Promi
     prisma.reply.create({ data: { queryId: query.id, authorId: user.id, body: `[Forwarded by HOD]\n${parsed.data.body}` } }),
     prisma.query.update({ where: { id: query.id }, data: { status: "FORWARDED_TO_STAFF", assignedToId, escalatedAt: null } }),
   ]);
+  await notifyUserAcrossChannels({
+    userId: assignedToId,
+    type: "assignment",
+    title: "A query was forwarded to you",
+    body: `"${query.subject}" was forwarded for your review.`,
+    queryId: query.id,
+    details: query.message,
+  });
   await recordAudit({ actorId: user.id, action: "hod_forwarded_query", entityType: "query", entityId: query.id, metadata: { assignedToId } });
   revalidatePath(`/staff/queries/${query.id}`); revalidatePath("/staff/inbox"); revalidatePath("/hod"); revalidatePath("/dashboard");
 }

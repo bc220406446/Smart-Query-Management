@@ -13,26 +13,62 @@
 type WhatsAppInst = { connect: () => Promise<void>; sendMessage: (to: string, content: unknown) => Promise<void>; logout: () => Promise<void>; ev?: { isConnected?: () => boolean } };
 type WhatsAppMaker = () => WhatsAppInst | Promise<WhatsAppInst>;
 
-let _maker: WhatsAppMaker | null = null;
-let _inst: WhatsAppInst | null = null;
-let _ready: Promise<void> | null = null;
+type WhatsAppState = {
+  maker: WhatsAppMaker | null;
+  inst: WhatsAppInst | null;
+  ready: Promise<void> | null;
+};
+
+const globalState = globalThis as typeof globalThis & { __smartQueryWhatsApp?: WhatsAppState };
+const state: WhatsAppState = globalState.__smartQueryWhatsApp ?? {
+  maker: null,
+  inst: null,
+  ready: null,
+};
+globalState.__smartQueryWhatsApp = state;
+
+/** Register a minimal outgoing client when the connect route was not visited. */
+async function ensureWhatsAppMaker() {
+  if (state.maker) return;
+  const { Client, LocalAuth } = await import("whatsapp-web.js");
+  setWhatsAppMaker(() => {
+    let ready = false;
+    const client = new Client({
+      authStrategy: new LocalAuth({ dataPath: process.env.WA_SESSION_PATH ?? "./.wwebjs-auth" }),
+      puppeteer: {
+        headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      },
+    });
+    client.on("ready", () => { ready = true; console.info("WhatsApp support account is ready for notifications."); });
+    return {
+      connect: async () => { await client.initialize(); },
+      sendMessage: async (to: string, content: unknown) => {
+        await client.sendMessage(`${to.replace(/\D/g, "")}@c.us`, String((content as { text?: string }).text ?? content));
+      },
+      logout: async () => { await client.destroy(); ready = false; },
+      ev: { isConnected: () => ready },
+    };
+  });
+}
 
 /**
  * Configure the WhatsApp client maker once at server startup.
  */
 export function setWhatsAppMaker(maker: WhatsAppMaker) {
-  _maker = maker;
+  state.maker = maker;
 }
 
 /** Connect (or reconnect) the WhatsApp socket. Returns once connected. */
 export async function connectWhatsApp(pushName = "SmartQueryHub") {
-  if (!_maker) throw new Error("WhatsApp maker not configured - call setWhatsAppMaker first.");
-  if (_inst && _inst.ev?.isConnected?.()) return _ready!;
+  if (!state.maker) throw new Error("WhatsApp maker not configured - call setWhatsAppMaker first.");
+  if (state.inst && state.ready) return state.ready;
 
-  const inst = await _maker();
-  _inst = inst;
+  const inst = await state.maker();
+  state.inst = inst;
 
-  _ready = (async () => {
+  state.ready = (async () => {
     await inst.connect();
     // Mark the profile name in WhatsApp contacts so outgoing messages look branded.
     if ("updateProfileName" in inst) {
@@ -40,28 +76,29 @@ export async function connectWhatsApp(pushName = "SmartQueryHub") {
     }
   })();
 
-  return _ready;
+  return state.ready;
 }
 
 /** Disconnect and clear state. */
 export async function disconnectWhatsApp() {
-  if (_inst) {
-    try { await _inst.logout(); } catch { /* ignore */ }
-    _inst = null;
+  if (state.inst) {
+    try { await state.inst.logout(); } catch { /* ignore */ }
+    state.inst = null;
   }
-  _ready = null;
+  state.ready = null;
 }
 
 /** Current WhatsApp instance, connecting first if needed. */
 export async function getInst(): Promise<WhatsAppInst> {
-  if (!_inst || !_ready) await connectWhatsApp();
-  await _ready;
-  if (!_inst) throw new Error("WhatsApp not connected");
-  return _inst;
+  if (!state.inst || !state.ready) await connectWhatsApp();
+  await state.ready;
+  if (!state.inst) throw new Error("WhatsApp not connected");
+  return state.inst;
 }
 
 /** Send a text reply to a phone number (E.164, e.g. "+923001234567"). */
 export async function sendWhatsAppReply(to: string, text: string) {
+  await ensureWhatsAppMaker();
   const inst = await getInst();
   await inst.sendMessage(to, { text, type: "chat" });
 }

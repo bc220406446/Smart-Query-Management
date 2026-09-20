@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/roles";
 import { overrideSchema } from "@/lib/validation";
 import { recordAudit } from "@/lib/audit";
-import { notifyUser } from "@/lib/notify";
+import { notifyUserAcrossChannels } from "@/lib/notify";
 
 /** FR-09: HOD / admin can override status and reassign any query. */
 export async function overrideQuery(formData: FormData): Promise<void> {
@@ -45,11 +45,15 @@ export async function overrideQuery(formData: FormData): Promise<void> {
   });
 
   if (query.studentId) {
-    await notifyUser({
+    await notifyUserAcrossChannels({
       userId: query.studentId,
       type: "status_update",
       title: `Query status changed to ${parsed.data.status.replace("_", " ")}`,
       body: query.subject,
+      queryId: query.id,
+      subject: query.subject,
+      details: query.message,
+      status: parsed.data.status.replace("_", " "),
     });
   }
   await recordAudit({
@@ -75,7 +79,7 @@ export async function escalateQuery(queryId: string): Promise<void> {
     where: { id: queryId },
     data: { status: "HOD_ESCALATED", escalatedAt: new Date() },
   });
-  if (updated.studentId) await notifyUser({ userId: updated.studentId, type: "status_update", title: "Your query was escalated to the HOD", body: updated.subject });
+  if (updated.studentId) await notifyUserAcrossChannels({ userId: updated.studentId, type: "status_update", title: "Your query was escalated to the HOD", body: updated.subject, queryId: updated.id, subject: updated.subject, details: updated.message, status: "HOD ESCALATED" });
   await recordAudit({ actorId: user.id, action: "hod_escalated", entityType: "query", entityId: queryId });
   revalidatePath("/hod");
   revalidatePath("/staff/inbox");

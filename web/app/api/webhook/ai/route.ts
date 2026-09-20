@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Prisma, QueryPriority, QueryStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { recordAudit } from "@/lib/audit";
-import { notifyUser } from "@/lib/notify";
+import { notifyUserAcrossChannels } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +27,7 @@ const webhookSchema = z.object({
   departmentId: z.string().optional(),
   assignedToId: z.string().optional(),
   priority: z.nativeEnum(QueryPriority).optional(),
+  forceNotification: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -59,14 +60,19 @@ export async function POST(request: Request) {
     },
   });
 
-  const statusChanged = data.status && data.status !== existing.status;
-  if (statusChanged) {
+  const statusChanged = Boolean(data.status && data.status !== existing.status);
+  const shouldNotify = statusChanged || data.forceNotification === true;
+  if (shouldNotify) {
     if (query.studentId) {
-      await notifyUser({
+      await notifyUserAcrossChannels({
         userId: query.studentId,
         type: "status_update",
         title: `Query status: ${data.status!.replace("_", " ")}`,
         body: query.subject,
+        queryId: query.id,
+        subject: query.subject,
+        details: query.message,
+        status: data.status!.replace("_", " "),
       });
     }
     await recordAudit({
@@ -74,6 +80,19 @@ export async function POST(request: Request) {
       entityType: "query",
       entityId: query.id,
       metadata: { from: existing.status, to: data.status, category: data.category, confidence: data.confidence },
+    });
+  }
+
+  if (query.assignedToId && (query.assignedToId !== existing.assignedToId || data.forceNotification === true)) {
+    await notifyUserAcrossChannels({
+      userId: query.assignedToId,
+      type: "assignment",
+      title: "A query was assigned to you",
+      body: `"${query.subject}" is ready for your review.`,
+      queryId: query.id,
+      subject: query.subject,
+      details: query.message,
+      status: "ASSIGNED",
     });
   }
 

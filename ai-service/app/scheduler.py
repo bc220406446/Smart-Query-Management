@@ -78,7 +78,8 @@ def start_scheduler() -> BackgroundScheduler:
         trigger=IntervalTrigger(minutes=settings.escalation_poll_minutes),
         id="escalation",
         replace_existing=True,
-        next_run_time=None,  # first run after one interval
+        coalesce=True,
+        max_instances=1,
     )
 
     # FR-02: optional Gmail API poller for email ingestion.

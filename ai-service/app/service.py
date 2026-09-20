@@ -110,8 +110,8 @@ def process_pending_queries(db: Session, limit: int = 10) -> List[str]:
 
     db.commit()
 
-    for query_id in processed:
-        _notify_webhook(query_id)
+    for query in [item for item in pending if item.id in processed]:
+        _notify_webhook(query)
 
     return processed
 
@@ -137,6 +137,7 @@ def run_escalation(db: Session) -> List[str]:
     )
 
     escalated: List[str] = []
+    escalated_queries: list[Query] = []
     now = datetime.now(timezone.utc)
     for query in stale:
         query.status = QueryStatus.AUTO_ESCALATED
@@ -157,13 +158,16 @@ def run_escalation(db: Session) -> List[str]:
             {"reason": f"unresolved for {settings.escalation_hours}h"},
         )
         escalated.append(query.id)
+        escalated_queries.append(query)
         logger.info("Escalated query %s", query.id)
 
     db.commit()
+    for query in escalated_queries:
+        _notify_webhook(query)
     return escalated
 
 
-def _notify_webhook(query_id: str) -> None:
+def _notify_webhook(query: Query) -> None:
     """Optional: POST the result back to the Next.js webhook (FR-03/04/05)."""
     if not settings.ai_webhook_url or not settings.ai_webhook_secret:
         return
@@ -176,12 +180,23 @@ def _notify_webhook(query_id: str) -> None:
     try:
         httpx.post(
             f"{settings.ai_webhook_url.rstrip('/')}/api/webhook/ai",
-            json={"queryId": query_id},
+            json={
+                "queryId": query.id,
+                "status": query.status.value,
+                "category": query.category,
+                "confidence": query.confidence,
+                "aiClassification": query.ai_classification,
+                "aiDraftReply": query.ai_draft_reply,
+                "departmentId": query.department_id,
+                "assignedToId": query.assigned_to_id,
+                "priority": query.priority.value,
+                "forceNotification": True,
+            },
             headers={"x-ai-secret": settings.ai_webhook_secret},
             timeout=10,
         )
     except Exception as exc:  # noqa: BLE001
-        logger.warning("Webhook notification failed for %s: %s", query_id, exc)
+        logger.warning("Webhook notification failed for %s: %s", query.id, exc)
 
 
 # ---------------------------------------------------------------------------
@@ -244,6 +259,40 @@ def ingest_email_query(db: Session, subject: str, snippet: str, sender: str, thr
     return query.id
 
 
+def _is_undeliverable_email(message: email.message.Message, sender: str, subject: str, body: str) -> bool:
+    """Return True for automated bounce/delivery-failure messages.
+
+    These messages are mailbox notifications, not student support requests.
+    Keep the check deliberately narrow so ordinary emails mentioning delivery
+    problems still become queries.
+    """
+    sender_text = sender.lower().strip()
+    subject_text = subject.lower().strip()
+    content_type = message.get_content_type().lower()
+    auto_submitted = message.get("Auto-Submitted", "").lower()
+    precedence = message.get("Precedence", "").lower()
+    system_sender = (
+        sender_text in {"mailer-daemon", "postmaster"}
+        or sender_text.startswith("mailer-daemon@")
+        or sender_text.startswith("postmaster@")
+        or "mailer-daemon" in sender_text
+    )
+    failure_subject = any(
+        phrase in subject_text
+        for phrase in (
+            "undelivered mail",
+            "delivery status notification",
+            "delivery failure",
+            "mail delivery failed",
+            "returned mail",
+            "failure notice",
+            "message not delivered",
+        )
+    )
+    report_message = content_type == "multipart/report" or "auto-replied" in auto_submitted
+    return system_sender or (failure_subject and (report_message or precedence == "bulk"))
+
+
 def imap_poll_for_emails(db: Session, label: str = "INBOX", max_messages: int = 50) -> list[str]:
     """Read unread IMAP messages and create EMAIL queries."""
     if not settings.email_ingestion_enabled or not settings.email_imap_username or not settings.email_imap_password:
@@ -264,11 +313,16 @@ def imap_poll_for_emails(db: Session, label: str = "INBOX", max_messages: int = 
                 continue
             message = email.message_from_bytes(raw)
             sender = email.utils.parseaddr(message.get("From", ""))[1].lower().strip()
+            subject = _decode_email_header(message.get("Subject", "")) or "Email query"
             body = _email_text(message)
+            if _is_undeliverable_email(message, sender, subject, body):
+                logger.info("Skipping undeliverable email %s from %s", message_id.decode(errors="ignore"), sender or "unknown")
+                mailbox.store(message_id, "+FLAGS", "\\Seen")
+                continue
             if not sender or not body:
                 continue
             message_key = message.get("Message-ID", message_id.decode(errors="ignore"))
-            ingest_email_query(db, _decode_email_header(message.get("Subject", "")) or "Email query", body, sender, message_key)
+            ingest_email_query(db, subject, body, sender, message_key)
             db.commit()
             mailbox.store(message_id, "+FLAGS", "\\Seen")
             ingested.append(message_key)
