@@ -20,6 +20,8 @@ class DraftRequest(BaseModel):
     priority: str = "NORMAL"
     action: str = "resolve"
     recipient: str = ""
+    sender_role: str = "STAFF"
+    recipient_role: str = ""
 
 
 @router.post("/draft")
@@ -35,7 +37,7 @@ def generate_draft(req: DraftRequest) -> dict[str, str]:
         subject = req.subject
         message = req.message
 
-    return {"draft": draft_reply(DraftQuery(), req.category, priority, req.action, req.recipient)}
+    return {"draft": draft_reply(DraftQuery(), req.category, priority, req.action, req.recipient, req.sender_role.upper(), req.recipient_role.upper())}
 
 
 @router.post("/process", response_model=ProcessResult)

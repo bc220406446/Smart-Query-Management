@@ -20,7 +20,7 @@ CATEGORY_KEYWORDS: dict[str, list[str]] = {
     # More specific categories come first so ties resolve sensibly.
     "result": ["result", "grade", "marks", "gpa", "transcript", "incomplete", "grievance", "recheck", "reeval"],
     "admission": ["admission", "apply", "application", "enrol", "enroll", "enrolment", "eligibility"],
-    "registration": ["register", "registration", "course load", "add course", "drop course", "enroll in", "enrol in"],
+    "registration": ["register", "registration", "course load", "credit hour", "credit hours", "credit limit", "increase credit", "add course", "drop course", "enroll in", "enrol in"],
     "exam": ["exam", "midterm", "final", "quiz", "paper", "schedule", "date sheet", "timing"],
     "fee": ["fee", "tuition", "payment", "scholarship", "financial aid", "dues", "voucher", "bill"],
     "course": ["course", "syllabus", "lecture", "assignment", "lab", "project", "teacher", "instructor", "cs302", "mgt"],
@@ -46,7 +46,9 @@ CATEGORY_TO_DEPARTMENT: dict[str, str] = {
     "technical": "TECH",
     "complaint": "SA",
     "leave": "SA",
-    "general": "SA",
+    # General/unmatched queries belong to general administration rather than
+    # being assigned to an academic or technical department.
+    "general": "ADMIN",
 }
 
 COURSE_CODE_DEPARTMENTS = {
@@ -58,6 +60,9 @@ COURSE_CODE_DEPARTMENTS = {
 
 def department_code_for_query(text: str, category: str) -> str | None:
     """Resolve the department first; course instructors are never random."""
+    lowered = text.lower()
+    if any(term in lowered for term in ("credit hour", "credit hours", "credit limit", "increase credit")):
+        return "ACA"
     code_match = re.search(r"\b([A-Z]{2,5})[- ]?\d{3}\b", text.upper())
     if code_match and code_match.group(1) in COURSE_CODE_DEPARTMENTS:
         return COURSE_CODE_DEPARTMENTS[code_match.group(1)]
@@ -86,6 +91,28 @@ def _reference_keywords() -> dict[str, list[str]]:
 
 
 REFERENCE_KEYWORDS = _reference_keywords()
+
+
+def _reference_course_routes() -> dict[str, str]:
+    """Build exact course -> instructor routes from the supplied CSV."""
+    path = Path(__file__).resolve().parents[2] / "data" / "classification_reference.csv"
+    routes: dict[str, str] = {}
+    if not path.exists():
+        return routes
+    with path.open(newline="", encoding="utf-8-sig") as file:
+        for row in csv.DictReader(file):
+            email = (row.get("Email") or "").strip().lower()
+            role = (row.get("Role Task") or "").lower()
+            name = (row.get("Name") or "").lower()
+            if "instructor" not in role and "instructor" not in name:
+                continue
+            text = " ".join(row.get(key) or "" for key in ("Name", "Role Task", "Priority Assessment Keywords"))
+            for code in re.findall(r"\b[A-Z]{2,5}[- ]?\d{3}\b", text.upper()):
+                routes[code.replace("-", "").replace(" ", "")] = email
+    return routes
+
+
+REFERENCE_COURSE_ROUTES = _reference_course_routes()
 
 # ---------------------------------------------------------------------------
 # Classification
@@ -172,10 +199,26 @@ CATEGORY_REPLIES: dict[str, str] = {
 }
 
 
-def draft_reply_rules(category: str, subject: str, priority: QueryPriority) -> str:
+def draft_reply_rules(
+    category: str,
+    subject: str,
+    priority: QueryPriority,
+    action: str = "resolve",
+    sender_role: str = "STAFF",
+    recipient_role: str = "",
+) -> str:
     """Generate a reasonable draft reply without any LLM."""
+    if action == "forward":
+        if sender_role == "HOD" and recipient_role == "HOD":
+            body = "Dear Sir, I am forwarding this query to you for better resolution as it requires your department's review. Kindly look into it and guide the student accordingly."
+        elif sender_role == "HOD":
+            body = "Please review this query and take the necessary action within your area of responsibility. Update the ticket once the student has been assisted."
+        else:
+            body = "Sir, kindly look into this query and resolve it as it requires your authority or departmental review. Please update the ticket with the outcome."
+        return f"Subject: Re: {subject}\n\n{body}"
     template = CATEGORY_REPLIES.get(category, CATEGORY_REPLIES["general"])
     reply = template.format(category=category, university="our university")
+    reply += " Please follow the applicable VU policy and official process, and reply with the required documents or details if further verification is needed."
     if priority in (QueryPriority.HIGH, QueryPriority.URGENT):
         reply = (
             "We have flagged your query as high priority and it is being handled urgently. "

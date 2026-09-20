@@ -21,13 +21,13 @@ async function loadAssignableQuery(queryId: string) {
 }
 
 export async function generateAiDraft(queryId: string, action: "resolve" | "forward" = "resolve"): Promise<string> {
-  await requireRole([...STAFF_ROLES]);
+  const user = await requireRole([...STAFF_ROLES]);
   const query = await prisma.query.findUnique({ where: { id: queryId } });
   if (!query) throw new Error("Query not found.");
   const response = await fetch(`${process.env.AI_SERVICE_URL ?? "http://localhost:8000"}/queries/draft`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subject: query.subject, message: query.message, category: query.category ?? "general", priority: query.priority, action }),
+    body: JSON.stringify({ subject: query.subject, message: query.message, category: query.category ?? "general", priority: query.priority, action, sender_role: user.role, recipient_role: action === "forward" ? (user.role === "HOD" ? "HOD_OR_STAFF" : "HOD") : "" }),
     cache: "no-store",
   });
   if (!response.ok) throw new Error("AI draft service is unavailable.");

@@ -24,23 +24,23 @@ DRAFT_PROMPT = (
 )
 
 
-def draft_reply(query: Query, category: str, priority: QueryPriority, action: str = "resolve", recipient: str = "") -> str:
+def draft_reply(query: Query, category: str, priority: QueryPriority, action: str = "resolve", recipient: str = "", sender_role: str = "STAFF", recipient_role: str = "") -> str:
     """Return a draft reply for the query (LLM with template fallback)."""
     if settings.gemini_api_key:
-        llm_draft = _draft_with_gemini(query, category, priority, action, recipient)
+        llm_draft = _draft_with_gemini(query, category, priority, action, recipient, sender_role, recipient_role)
         if llm_draft:
             logger.info("Generated AI draft with Gemini for query %s", query.id)
             return llm_draft
     if settings.anthropic_api_key:
-        llm_draft = _draft_with_claude(query, category, priority, action, recipient)
+        llm_draft = _draft_with_claude(query, category, priority, action, recipient, sender_role, recipient_role)
         if llm_draft:
             logger.info("Generated AI draft with Claude for query %s", query.id)
             return llm_draft
     logger.warning("Using rules-based draft for query %s; AI providers failed", query.id)
-    return draft_reply_rules(category, query.subject, priority)
+    return draft_reply_rules(category, query.subject, priority, action, sender_role, recipient_role)
 
 
-def _draft_with_gemini(query: Query, category: str, priority: QueryPriority, action: str, recipient: str) -> str | None:
+def _draft_with_gemini(query: Query, category: str, priority: QueryPriority, action: str, recipient: str, sender_role: str, recipient_role: str) -> str | None:
     try:
         from google import genai  # type: ignore
 
@@ -50,7 +50,7 @@ def _draft_with_gemini(query: Query, category: str, priority: QueryPriority, act
             category=category,
             priority=priority.value,
             message=query.message,
-            action=f"{action}; recipient: {recipient or 'the concerned university staff member'}",
+            action=f"{action}; sender role: {sender_role}; recipient role: {recipient_role or 'concerned university staff'}; recipient: {recipient or 'the concerned university staff member'}",
         )
         raw = client.models.generate_content(
             model=settings.gemini_model, contents=prompt
@@ -61,7 +61,7 @@ def _draft_with_gemini(query: Query, category: str, priority: QueryPriority, act
         return None
 
 
-def _draft_with_claude(query: Query, category: str, priority: QueryPriority, action: str, recipient: str) -> str | None:
+def _draft_with_claude(query: Query, category: str, priority: QueryPriority, action: str, recipient: str, sender_role: str, recipient_role: str) -> str | None:
     try:
         import anthropic  # type: ignore
 
@@ -71,12 +71,12 @@ def _draft_with_claude(query: Query, category: str, priority: QueryPriority, act
             category=category,
             priority=priority.value,
             message=query.message,
-            action=f"{action}; recipient: {recipient or 'the concerned university staff member'}",
+            action=f"{action}; sender role: {sender_role}; recipient role: {recipient_role or 'concerned university staff'}; recipient: {recipient or 'the concerned university staff member'}",
         )
         response = client.messages.create(
             model=settings.claude_model,
             max_tokens=300,
-            system="You are a university support officer. Return only the reply text.",
+            system="You are a VU university support officer. Use respectful, policy-aligned language, do not invent rules, and return only the reply text.",
             messages=[{"role": "user", "content": prompt}],
         )
         raw = "".join(block.text for block in response.content if getattr(block, "type", "") == "text")

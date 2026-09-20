@@ -18,6 +18,7 @@ node_modules/
 .next/
 out/
 next-env.d.ts
+.agent
 
 # ---- OS / editor ----
 .DS_Store

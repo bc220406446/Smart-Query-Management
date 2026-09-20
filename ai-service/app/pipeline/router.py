@@ -2,33 +2,19 @@
 
 Given a classified category, pick the department and the best assignee:
 1. Department mapped from the category (or a name match).
-2. An INSTRUCTOR in that department who is NOT on leave, preferring the one
-   with the fewest open assignments.
+2. An exact course instructor from the classification reference when a course
+   code is present; otherwise a deterministic instructor (never load balance).
 3. Falling back to the department HOD, then unassigned.
 """
 
 import re
 from typing import Optional, Tuple
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Department, Query, QueryStatus, Role, User
-from app.pipeline.rules import CATEGORY_TO_DEPARTMENT
-
-
-def _open_count_subquery(db: Session):
-    open_statuses = [
-        QueryStatus.SUBMITTED,
-        QueryStatus.ASSIGNED,
-        QueryStatus.IN_PROGRESS,
-    ]
-    return (
-        select(Query.assigned_to_id, func.count(Query.id).label("open_count"))
-        .where(Query.status.in_(open_statuses))
-        .group_by(Query.assigned_to_id)
-        .subquery()
-    )
+from app.pipeline.rules import CATEGORY_TO_DEPARTMENT, REFERENCE_COURSE_ROUTES
 
 
 def route_query(
@@ -55,30 +41,40 @@ def _find_department(
 
 
 def _pick_assignee(db: Session, department_id: str, text: Optional[str] = None) -> Optional[User]:
-    open_counts = _open_count_subquery(db)
+    lowered = (text or "").lower()
+    # Credit-hour/load-limit matters are owned by Course Selection &
+    # Registration, even when the student mentions a course code.
+    if any(term in lowered for term in ("credit hour", "credit hours", "credit limit", "increase credit")):
+        course_selection = db.scalar(select(User).where(
+            User.role == Role.INSTRUCTOR,
+            User.email.ilike("course.registration@%"),
+        ))
+        if course_selection:
+            return course_selection
 
     # Course-specific queries must go to the matching course instructor when
     # that account exists; otherwise CS101 could be assigned to any CS staff.
     course_match = re.search(r"\b([A-Z]{2,5})[- ]?(\d{3})\b", (text or "").upper())
     if course_match:
-        course_email = f"{course_match.group(1).lower()}{course_match.group(2)}.instructor@"
+        code = f"{course_match.group(1)}{course_match.group(2)}"
+        course_email = REFERENCE_COURSE_ROUTES.get(code) or f"{course_match.group(1).lower()}{course_match.group(2)}.instructor@"
         exact = db.scalar(select(User).where(
             User.department_id == department_id,
             User.role == Role.INSTRUCTOR,
-            User.email.ilike(f"{course_email}%"),
+            User.email.ilike(course_email if "@" in course_email else f"{course_email}%"),
         ))
         if exact:
             return exact
 
-    # 1) Instructors on duty, least loaded first.
+    # 1) Deterministic fallback. Related queries stay with the same stable
+    # department staff selection; workload is deliberately not considered.
     instructor = db.scalar(
         select(User)
         .where(
             User.department_id == department_id,
             User.role == Role.INSTRUCTOR,
         )
-        .outerjoin(open_counts, User.id == open_counts.c.assigned_to_id)
-        .order_by(func.coalesce(open_counts.c.open_count, 0).asc())
+        .order_by(User.email.asc())
         .limit(1)
     )
     if instructor:

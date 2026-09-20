@@ -88,7 +88,6 @@ export default async function QueryDetailPage({
           query.replies.map((r) => (
             <div
               key={r.id}
-              className="card"
               className={`card reply-card${r.isAiDraft ? " reply-card-ai" : ""}`}
             >
               <div
