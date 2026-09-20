@@ -7,6 +7,7 @@ Given a classified category, pick the department and the best assignee:
 3. Falling back to the department HOD, then unassigned.
 """
 
+import re
 from typing import Optional, Tuple
 
 from sqlalchemy import func, select
@@ -31,14 +32,14 @@ def _open_count_subquery(db: Session):
 
 
 def route_query(
-    db: Session, category: str, department_name: Optional[str] = None
+    db: Session, category: str, department_name: Optional[str] = None, text: Optional[str] = None
 ) -> Tuple[Optional[str], Optional[str]]:
     """Return (department_id, assigned_user_id) for a classified query."""
     dept = _find_department(db, category, department_name)
     if dept is None:
         return None, None
 
-    assignee = _pick_assignee(db, dept.id)
+    assignee = _pick_assignee(db, dept.id, text)
     return dept.id, assignee.id if assignee else None
 
 
@@ -53,8 +54,21 @@ def _find_department(
     return None
 
 
-def _pick_assignee(db: Session, department_id: str) -> Optional[User]:
+def _pick_assignee(db: Session, department_id: str, text: Optional[str] = None) -> Optional[User]:
     open_counts = _open_count_subquery(db)
+
+    # Course-specific queries must go to the matching course instructor when
+    # that account exists; otherwise CS101 could be assigned to any CS staff.
+    course_match = re.search(r"\b([A-Z]{2,5})[- ]?(\d{3})\b", (text or "").upper())
+    if course_match:
+        course_email = f"{course_match.group(1).lower()}{course_match.group(2)}.instructor@"
+        exact = db.scalar(select(User).where(
+            User.department_id == department_id,
+            User.role == Role.INSTRUCTOR,
+            User.email.ilike(f"{course_email}%"),
+        ))
+        if exact:
+            return exact
 
     # 1) Instructors on duty, least loaded first.
     instructor = db.scalar(
@@ -62,7 +76,6 @@ def _pick_assignee(db: Session, department_id: str) -> Optional[User]:
         .where(
             User.department_id == department_id,
             User.role == Role.INSTRUCTOR,
-            User.is_on_leave.is_(False),
         )
         .outerjoin(open_counts, User.id == open_counts.c.assigned_to_id)
         .order_by(func.coalesce(open_counts.c.open_count, 0).asc())

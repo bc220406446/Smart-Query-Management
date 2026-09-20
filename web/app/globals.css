@@ -1896,3 +1896,23 @@ select {
   background: transparent;
   font-weight: 650;
 }
+
+.app-sidebar-tools { display: flex; align-items: center; gap: 8px; }
+.notification-center { position: relative; }
+.notification-trigger { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 0; border-radius: var(--radius-md); color: var(--text-secondary); background: transparent; cursor: pointer; }
+.notification-trigger:hover { color: var(--text-primary); background: var(--bg-hover); }
+.notification-count { position: absolute; top: -2px; right: -3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--radius-full); color: var(--text-inverse); background: var(--danger); font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; }
+.notification-popover { position: absolute; z-index: 30; top: 42px; left: 0; width: min(320px, calc(100vw - 24px)); border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); box-shadow: var(--shadow-xl); overflow: hidden; }
+.notification-popover-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-light); }
+.notification-list { max-height: 360px; overflow-y: auto; }
+.notification-item { display: flex; flex-direction: column; align-items: flex-start; width: 100%; gap: 4px; padding: 12px 14px; border: 0; border-bottom: 1px solid var(--border-light); color: var(--text-primary); background: transparent; text-align: left; cursor: pointer; }
+.notification-item:hover, .notification-unread { background: var(--bg-hover); }
+.notification-item-title { font-weight: 700; font-size: 13px; }
+.notification-item-body { color: var(--text-secondary); font-size: 12px; line-height: 1.4; }
+.notification-view-all { display: block; padding: 11px 14px; color: var(--brand-600); font-size: 12px; font-weight: 700; text-decoration: none; }
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}

@@ -1,24 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendWhatsAppReply } from "@/lib/whatsapp";
 
-/** FR-08: in-app notification row (shown via the bell / dashboard). */
-export async function notifyUser(params: {
-  userId: string;
-  type: string;
-  title: string;
-  body?: string;
-}) {
-  if (!params.userId) return null;
-  return prisma.notification.create({
-    data: {
-      userId: params.userId,
-      type: params.type,
-      title: params.title,
-      body: params.body ?? null,
-    },
-  });
-}
-
 function escapeHtml(value: string) {
   return value.replace(/[&<>'\"]/g, (character) => ({
     "&": "&amp;",
@@ -83,12 +65,11 @@ export async function notifyUserAcrossChannels(params: {
 }) {
   if (!params.userId) return null;
 
-  const notification = await notifyUser(params);
   const user = await prisma.user.findUnique({
     where: { id: params.userId },
-    select: { email: true, phone: true },
+    select: { email: true, phone: true, emailNotifications: true, whatsappNotifications: true },
   });
-  if (!user) return notification;
+  if (!user) return null;
 
   const rawBody = params.details ?? params.body ?? params.title;
   const extractedSubject = rawBody.match(/^"([^"\n]+)"/)?.[1];
@@ -98,14 +79,14 @@ export async function notifyUserAcrossChannels(params: {
   const whatsappBody = `Subject: ${subject}\nDetails: ${details}\nStatus: ${status}`;
   const emailBody = `Subject: ${subject}\nDetails: ${details}\nStatus: ${status}`;
   const deliveries = await Promise.allSettled([
-    user.email
+    user.emailNotifications && user.email
       ? sendEmailNotification({
           to: user.email,
           subject: "Your Query Status has been updated",
           html: `<p>${escapeHtml(emailBody).replace(/\n/g, "<br />")}</p>`,
         })
       : Promise.resolve(null),
-    user.phone
+    user.whatsappNotifications && user.phone
       ? sendWhatsAppReply(user.phone, whatsappBody)
       : Promise.resolve(),
   ]);
@@ -116,5 +97,5 @@ export async function notifyUserAcrossChannels(params: {
     }
   }
 
-  return notification;
+  return user;
 }

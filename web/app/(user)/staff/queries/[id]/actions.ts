@@ -14,6 +14,7 @@ async function loadAssignableQuery(queryId: string) {
   const user = await requireRole([...STAFF_ROLES]);
   const query = await prisma.query.findFirst({
     where: { id: queryId, OR: [{ assignedToId: user.id }, { status: { in: ["AUTO_ESCALATED", "HOD_ESCALATED", "FORWARDED_TO_HOD", "FORWARDED_TO_STAFF"] } }] },
+    include: { assignedTo: { select: { isOnLeave: true } } },
   });
   if (!query) throw new Error("Query not found or not assigned to you.");
   return { user, query };
@@ -49,6 +50,9 @@ export async function deleteQuery(queryId: string): Promise<void> {
 /** FR-05: staff sends a reply; the query moves to RESOLVED. */
 export async function sendReply(queryId: string, formData: FormData): Promise<void> {
   const { user, query } = await loadAssignableQuery(queryId);
+  if (user.role === "INSTRUCTOR" && query.assignedTo?.isOnLeave) {
+    redirect(`/staff/queries/${queryId}?error=${encodeURIComponent("Reply actions are disabled while you are on leave.")}`);
+  }
   if (user.role !== "HOD" && user.role !== "ADMIN" && query.status !== "SUBMITTED" && query.status !== "ASSIGNED" && query.status !== "IN_PROGRESS" && query.status !== "FORWARDED_TO_STAFF") {
     redirect(`/staff/queries/${queryId}?error=${encodeURIComponent("This query has already been forwarded to the HOD and cannot receive another staff reply.")}`);
   }

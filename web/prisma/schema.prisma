@@ -77,13 +77,17 @@ model User {
   hod              User?            @relation("HodStaff", fields: [hodId], references: [id], onDelete: SetNull)
   staff            User[]           @relation("HodStaff")
   isOnLeave        Boolean          @default(false) // FR-13: instructor leave / auto-reply mode
+  emailNotifications Boolean        @default(false)
+  whatsappNotifications Boolean     @default(false)
+  leaveStart       DateTime?
+  leaveEnd         DateTime?
+  leaveAutoReply   String?          @db.Text
   accounts         Account[]
   sessions         Session[]
   queries          Query[]          @relation("StudentQueries")
   assignedQueries  Query[]          @relation("AssignedQueries")
   replies          Reply[]
   auditLogs        AuditLog[]
-  notifications    Notification[]
   announcements    Announcement[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -198,20 +202,6 @@ model Announcement {
   updatedAt  DateTime @updatedAt
 
   @@map("announcements")
-}
-
-model Notification {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String // e.g. "status_update", "assignment", "escalation", "announcement"
-  title     String
-  body      String?   @db.Text
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
-
-  @@index([userId, readAt])
-  @@map("notifications")
 }
 
 model AuditLog {

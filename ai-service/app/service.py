@@ -8,11 +8,11 @@ from email.header import decode_header
 from datetime import datetime, timedelta, timezone
 from typing import List
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.models import AuditLog, Notification, Query, QueryChannel, QueryStatus, User
+from app.models import AuditLog, Query, QueryChannel, QueryStatus, Reply, User
 from app.pipeline.classifier import classify_text
 from app.pipeline.drafts import draft_reply
 from app.pipeline.router import route_query
@@ -21,15 +21,9 @@ logger = logging.getLogger(__name__)
 
 
 def _notify(db: Session, user_id: str, title: str, body: str) -> None:
-    db.add(
-        Notification(
-            user_id=user_id,
-            type="status_update",
-            title=title,
-            body=body,
-            created_at=datetime.now(timezone.utc),
-        )
-    )
+    # In-app notifications were removed from FR-08. Email and WhatsApp are
+    # delivered by the web webhook using the user's channel preferences.
+    return
 
 
 def _audit(
@@ -64,11 +58,16 @@ def process_pending_queries(db: Session, limit: int = 10) -> List[str]:
 
         result = classify_text(query.message)
         department_id, assigned_to_id = route_query(
-            db, result.category, result.department_code or getattr(query, "_department_name", None)
+            db,
+            result.category,
+            result.department_code or getattr(query, "_department_name", None),
+            f"{query.subject}\n{query.message}",
         )
+        assigned_user = db.get(User, assigned_to_id) if assigned_to_id else None
+        instructor_on_leave = bool(assigned_user and assigned_user.role.value == "INSTRUCTOR" and assigned_user.is_on_leave)
         draft = draft_reply(query, result.category, result.priority)
 
-        query.status = QueryStatus.ASSIGNED
+        query.status = QueryStatus.IN_PROGRESS if instructor_on_leave else QueryStatus.ASSIGNED
         query.category = result.category
         query.priority = result.priority
         query.confidence = result.confidence
@@ -84,13 +83,19 @@ def process_pending_queries(db: Session, limit: int = 10) -> List[str]:
         query.assigned_to_id = assigned_to_id
         query.updated_at = datetime.now(timezone.utc)
 
+        message = assigned_user.leave_auto_reply if instructor_on_leave and assigned_user.leave_auto_reply else f"'{query.subject}' was classified and assigned to the appropriate instructor."
+        if instructor_on_leave:
+            now = datetime.now(timezone.utc)
+            db.add(Reply(query_id=query.id, author_id=None, body=message, is_ai_draft=False, sent_at=now, created_at=now))
         if query.student_id:
             _notify(
                 db,
                 query.student_id,
-                "Query classified & routed",
+                "Instructor leave auto-reply" if instructor_on_leave else "Query classified & routed",
                 f"'{query.subject}' → {result.category} ({result.provider}).",
             )
+        if query.student_id and instructor_on_leave and assigned_user and assigned_user.leave_auto_reply:
+            _notify(db, query.student_id, "Instructor leave auto-reply", assigned_user.leave_auto_reply)
         _audit(
             db,
             "ai_classified",
@@ -119,6 +124,7 @@ def process_pending_queries(db: Session, limit: int = 10) -> List[str]:
 def run_escalation(db: Session) -> List[str]:
     """FR-07: escalate queries that have been unresolved for 24+ hours."""
     cutoff = datetime.now(timezone.utc) - timedelta(hours=settings.escalation_hours)
+    now = datetime.now(timezone.utc)
     open_statuses = [
         QueryStatus.SUBMITTED,
         QueryStatus.ASSIGNED,
@@ -132,6 +138,11 @@ def run_escalation(db: Session) -> List[str]:
                 Query.status.in_(open_statuses),
                 Query.updated_at < cutoff,
                 User.hod_id.is_not(None),
+                or_(
+                    User.is_on_leave.is_(False),
+                    User.leave_end.is_not(None) & (User.leave_end < now),
+                    User.leave_start.is_not(None) & (User.leave_start > now),
+                ),
             )
         )
     )

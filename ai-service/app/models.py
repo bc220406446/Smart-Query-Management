@@ -103,6 +103,11 @@ class User(Base):
     )
     hod_id: Mapped[Optional[str]] = mapped_column("hodId", ForeignKey("users.id", ondelete="SET NULL"), index=True)
     is_on_leave: Mapped[bool] = mapped_column("isOnLeave", Boolean, default=False)
+    email_notifications: Mapped[bool] = mapped_column("emailNotifications", Boolean, default=False)
+    whatsapp_notifications: Mapped[bool] = mapped_column("whatsappNotifications", Boolean, default=False)
+    leave_start: Mapped[Optional[datetime]] = mapped_column("leaveStart", DateTime(timezone=True))
+    leave_end: Mapped[Optional[datetime]] = mapped_column("leaveEnd", DateTime(timezone=True))
+    leave_auto_reply: Mapped[Optional[str]] = mapped_column("leaveAutoReply", Text)
     created_at: Mapped[datetime] = mapped_column("createdAt", DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column("updatedAt", DateTime(timezone=True))
 
@@ -166,31 +171,18 @@ class Reply(Base):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
     query_id: Mapped[str] = mapped_column(
-        ForeignKey("queries.id", ondelete="CASCADE"), index=True
+        "queryId", ForeignKey("queries.id", ondelete="CASCADE"), index=True
     )
     author_id: Mapped[Optional[str]] = mapped_column(
-        ForeignKey("users.id", ondelete="SET NULL")
+        "authorId", ForeignKey("users.id", ondelete="SET NULL")
     )
     body: Mapped[str] = mapped_column(Text)
-    is_ai_draft: Mapped[bool] = mapped_column(Boolean, default=False)
-    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    is_ai_draft: Mapped[bool] = mapped_column("isAiDraft", Boolean, default=False)
+    sent_at: Mapped[Optional[datetime]] = mapped_column("sentAt", DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column("createdAt", DateTime(timezone=True))
 
     query: Mapped[Query] = relationship(back_populates="replies")
 
-
-class Notification(Base):
-    __tablename__ = "notifications"
-
-    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
-    user_id: Mapped[str] = mapped_column(
-        "userId", ForeignKey("users.id", ondelete="CASCADE"), index=True
-    )
-    type: Mapped[str] = mapped_column(String(64))
-    title: Mapped[str] = mapped_column(String(255))
-    body: Mapped[Optional[str]] = mapped_column(Text)
-    read_at: Mapped[Optional[datetime]] = mapped_column("readAt", DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column("createdAt", DateTime(timezone=True))
 
 
 class AuditLog(Base):

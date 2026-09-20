@@ -39,6 +39,7 @@ export default async function StaffQueryDetailPage({
       student: { select: { name: true, email: true } },
       replies: { orderBy: { createdAt: "asc" }, include: { author: { select: { name: true } } } },
       department: { select: { name: true } },
+      assignedTo: { select: { name: true, isOnLeave: true } },
     },
   });
 
@@ -52,6 +53,7 @@ export default async function StaffQueryDetailPage({
   const resolved = query.status === "RESOLVED";
   const canRespond = from !== "all-queries" && user.role !== "ADMIN" && !resolved && (user.role === "HOD" || !["FORWARDED_TO_HOD", "AUTO_ESCALATED", "HOD_ESCALATED"].includes(query.status));
   const showExport = user.role === "ADMIN" || from === "all-queries";
+  const instructorOnLeave = user.role === "INSTRUCTOR" && query.assignedToId === user.id && query.assignedTo?.isOnLeave === true;
 
   return (
     <main className="container-page" style={{ maxWidth: 880 }}>
@@ -237,7 +239,7 @@ export default async function StaffQueryDetailPage({
       </div>
 
       <div className="modal-actions" style={{ marginTop: 20 }}>{showExport && <ReportExportActions queryId={query.id} />}{user.role === "ADMIN" && <form action={deleteQuery.bind(null, query.id)}><button type="submit" className="btn btn-danger">Delete query</button></form>}</div>
-      {canRespond && <QueryHandlingActions queryId={query.id} aiDraftReply={query.aiDraftReply} recipients={recipients} isHod={user.role === "HOD" || user.role === "ADMIN"} />}
+      {canRespond && <QueryHandlingActions queryId={query.id} aiDraftReply={query.aiDraftReply} recipients={recipients} isHod={user.role === "HOD" || user.role === "ADMIN"} disabled={instructorOnLeave} />}
     </main>
   );
 }
