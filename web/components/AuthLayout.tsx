@@ -23,14 +23,7 @@ export default function AuthLayout({
 
         <div
           data-auth-card={!bare}
-          className={`auth-card animate-fade-slide${bare ? " auth-card-bare" : ""}`}
-          style={{
-            background: "var(--bg-elevated)",
-            border: "1px solid var(--border-light)",
-            borderRadius: "var(--radius-lg)",
-            boxShadow: "var(--shadow-md)",
-            padding: "32px 28px",
-          }}
+          className={`auth-card auth-card-surface animate-fade-slide${bare ? " auth-card-bare" : ""}`}
         >
           {!bare && <><p className="auth-kicker">SMART QUERY HUB</p><h1 className="auth-card-title">
             {title}

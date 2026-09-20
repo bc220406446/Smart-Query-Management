@@ -82,10 +82,10 @@ export default async function DashboardPage() {
 
       <div className="dashboard-sections">
         <section className="dashboard-full-section">
-          <h3 style={{ marginBottom: 16 }}>
+          <h3 className="dashboard-section-title">
             {isStaff ? "Recently assigned" : "Recent queries"}
           </h3>
-          <div className="table-wrap" style={{ padding: 0 }}>
+          <div className="table-wrap table-wrap-flush">
             {myQueries.length === 0 ? (
               <div className="empty-state">
                 <span className="empty-state-icon" aria-hidden="true">-</span>

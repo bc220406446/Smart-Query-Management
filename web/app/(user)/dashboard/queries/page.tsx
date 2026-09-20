@@ -59,7 +59,7 @@ export default async function MyQueriesPage() {
                       {splitIncomingQuery(q.subject, q.message).subject}
                     </Link>
                   </td>
-                  <td style={{ color: "var(--text-secondary)" }}>
+                  <td className="text-secondary">
                     {q.assignedTo?.name ?? "-"}
                   </td>
                   <td>

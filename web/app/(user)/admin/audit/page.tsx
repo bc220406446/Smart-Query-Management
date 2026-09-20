@@ -31,7 +31,7 @@ export default async function AuditLogPage() {
           </p>
         </div>
       </div>
-      <div className="table-wrap" style={{ marginTop: 28 }}>
+      <div className="table-wrap audit-table-wrap">
         {logs.length === 0 ? (
           <div className="empty-state">
             <span className="empty-state-icon" aria-hidden="true">

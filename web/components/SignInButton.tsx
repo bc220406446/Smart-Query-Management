@@ -7,10 +7,9 @@ export default function SignInButton({ callbackUrl = "/dashboard" }: { callbackU
     <button
       type="button"
       onClick={() => signIn("google", { callbackUrl })}
-      className="btn btn-primary"
-      style={{ gap: 8, padding: "10px 18px" }}
+      className="btn btn-primary signin-google-button"
     >
-      <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" style={{ opacity: 0.95 }}>
+      <svg width={16} height={16} viewBox="0 0 24 24" aria-hidden="true" className="signin-google-icon">
         <path
           fill="currentColor"
           d="M12 5.04c1.85 0 3.5.64 4.8 1.9l3.58-3.58C18.2 1.35 15.3.25 12 .25 7.4.25 3.4 2.78 1.35 6.53l4.16 3.23C6.35 7.08 8.92 5.04 12 5.04z"

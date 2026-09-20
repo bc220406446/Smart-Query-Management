@@ -31,20 +31,12 @@ export default async function QueryDetailPage({
   const display = splitIncomingQuery(query.subject, query.message);
 
   return (
-    <main className="container-page" style={{ maxWidth: 880 }}>
-      <h1
-        style={{
-          fontSize: 24,
-          fontWeight: 600,
-          color: "var(--text-primary)",
-          margin: "0 0 6px",
-          letterSpacing: "-0.01em",
-        }}
-      >
+    <main className="container-page query-detail-page">
+      <h1 className="query-detail-title">
         {display.subject}
       </h1>
 
-      <p className="page-subtitle" style={{ marginBottom: 20 }}>
+      <p className="page-subtitle query-detail-subtitle">
         Your submitted query and conversation history.
       </p>
 
@@ -64,45 +56,30 @@ export default async function QueryDetailPage({
       </section>
 
       {submitted === "1" && (
-        <div className="success-box" style={{ marginBottom: 20 }}>
+        <div className="success-box query-detail-alert">
           Query submitted! It has been queued for AI classification and routing.
         </div>
       )}
 
       <QueryStatusPoller queryId={query.id} currentStatus={query.status} />
 
-      <div className="card" style={{ marginTop: 8 }}>
+      <div className="card query-message-card">
         <div className="card-header">
           <span className="card-title">Your message</span>
         </div>
-        <p
-          style={{
-            whiteSpace: "pre-wrap",
-            fontSize: 14,
-            lineHeight: 1.6,
-            color: "var(--text-primary)",
-          }}
-        >
+        <p className="query-message-text">
           {display.message}
         </p>
       </div>
 
-      <h3
-        style={{
-          fontSize: 14,
-          fontWeight: 600,
-          color: "var(--text-primary)",
-          marginTop: 28,
-          marginBottom: 12,
-        }}
-      >
+      <h3 className="conversation-title">
         Conversation &amp; updates
       </h3>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="conversation-list">
         {query.replies.length === 0 ? (
-          <div className="card" style={{ textAlign: "center", padding: "28px 16px" }}>
-            <p style={{ color: "var(--text-tertiary)", fontSize: 13 }}>
+          <div className="card conversation-empty">
+            <p className="conversation-empty-text">
               No replies yet. Your query is being handled - you will be notified
               when there is an update.
             </p>
@@ -112,37 +89,13 @@ export default async function QueryDetailPage({
             <div
               key={r.id}
               className="card"
-              style={{
-                borderColor:
-                  r.isAiDraft
-                    ? "var(--warning-border)"
-                    : "var(--border-light)",
-                borderWidth: 1,
-                background:
-                  r.isAiDraft
-                    ? "var(--warning-bg)"
-                    : "var(--bg-elevated)",
-              }}
+              className={`card reply-card${r.isAiDraft ? " reply-card-ai" : ""}`}
             >
               <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  fontSize: 11,
-                  marginBottom: 8,
-                }}
+                className="reply-header"
               >
                 <span
-                  style={{
-                    fontWeight: 600,
-                    color:
-                      r.isAiDraft
-                        ? "var(--warning)"
-                        : "var(--text-secondary)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
+                  className={`reply-author${r.isAiDraft ? " reply-author-ai" : ""}`}
                 >
                   {r.isAiDraft
                     ? "AI draft (pending staff review)"
@@ -152,14 +105,7 @@ export default async function QueryDetailPage({
                   {new Date(r.createdAt).toLocaleString()}
                 </span>
               </div>
-              <p
-                style={{
-                  whiteSpace: "pre-wrap",
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                  color: "var(--text-primary)",
-                }}
-              >
+              <p className="reply-body">
                 {r.body}
               </p>
             </div>

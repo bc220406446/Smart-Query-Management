@@ -36,7 +36,7 @@ export default async function AdminOverviewPage() {
         </div>
       </div>
 
-      <div className="stats-grid" style={{ marginTop: 8 }}>
+      <div className="stats-grid admin-stats-grid">
         {stats.map((stat) => (
           <div key={stat.label} className="stat-card">
             <p className="stat-label">{stat.label}</p>
@@ -45,7 +45,7 @@ export default async function AdminOverviewPage() {
         ))}
       </div>
 
-      <section style={{ marginTop: 28 }}>
+      <section className="admin-overview-section">
         <div className="section-heading-row">
           <h2 className="card-title">Recent announcements</h2>
           <Link href="/admin/announcements" className="btn btn-ghost btn-sm">View all</Link>
@@ -69,7 +69,7 @@ export default async function AdminOverviewPage() {
         </div>
       </section>
 
-      <section style={{ marginTop: 28 }}>
+      <section className="admin-overview-section">
         <div className="section-heading-row">
           <h2 className="card-title">Recent activities</h2>
           <Link href="/admin/audit" className="btn btn-ghost btn-sm">View all</Link>

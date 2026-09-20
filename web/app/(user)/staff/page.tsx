@@ -48,7 +48,7 @@ export default async function StaffOverviewPage() {
         </div>
       </div>
       <section className="dashboard-full-section">
-        <h2 className="card-title" style={{ marginBottom: 16 }}>
+        <h2 className="card-title staff-section-title">
           Recent assignments
         </h2>
         <div className="table-wrap">

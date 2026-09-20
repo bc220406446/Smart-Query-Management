@@ -16,7 +16,7 @@ export default async function AnnouncementsPage({
   return (
     <main className="container-page">
       {error && (
-        <div className="error-box" style={{ marginBottom: 20 }}>
+        <div className="error-box page-alert">
           {error}
         </div>
       )}
