@@ -180,8 +180,22 @@ export async function forwardFromHod(queryId: string, formData: FormData): Promi
     title: "A query was forwarded to you",
     body: `"${query.subject}" was forwarded for your review.`,
     queryId: query.id,
+    subject: query.subject,
     details: query.message,
+    status: "FORWARDED TO STAFF",
   });
+  if (query.studentId) {
+    await notifyUserAcrossChannels({
+      userId: query.studentId,
+      type: "status_update",
+      title: "Your query was forwarded for further review",
+      body: `"${query.subject}" has been forwarded to the concerned staff member for further review.`,
+      queryId: query.id,
+      subject: query.subject,
+      details: query.message,
+      status: "FORWARDED TO STAFF",
+    });
+  }
   await recordAudit({ actorId: user.id, action: "hod_forwarded_query", entityType: "query", entityId: query.id, metadata: { assignedToId } });
   revalidatePath(`/staff/queries/${query.id}`); revalidatePath("/staff/inbox"); revalidatePath("/hod"); revalidatePath("/dashboard");
 }
