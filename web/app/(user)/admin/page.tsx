@@ -1,53 +1,26 @@
+import Link from "next/link";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/roles";
-import { DeptBar, StatusPie, VolumeLine } from "@/components/AnalyticsCharts";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminAnalyticsPage() {
+function label(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export default async function AdminOverviewPage() {
   await requireRole([Role.ADMIN]);
-
-  const [byStatus, byDept, recentQueries, total, resolved] =
-    await Promise.all([
-      prisma.query.groupBy({ by: ["status"], _count: { _all: true } }),
-      prisma.query.groupBy({ by: ["departmentId"], _count: { _all: true } }),
-      prisma.query.findMany({
-        select: { createdAt: true, status: true },
-        orderBy: { createdAt: "asc" },
-        take: 200,
-      }),
-      prisma.query.count(),
-      prisma.query.count({
-        where: { status: "RESOLVED" },
-      }),
-    ]);
-
-  const departments = await prisma.department.findMany();
-  const deptName = new Map(departments.map((d) => [d.id, d.name]));
-
-  const statusData = byStatus.map((s) => ({
-    name: s.status,
-    value: s._count._all,
-  }));
-  const deptData = byDept.map((d) => ({
-    name: deptName.get(d.departmentId ?? "") ?? "Unassigned",
-    count: d._count._all,
-  }));
-
-  const volume: Array<{ date: string; count: number }> = [];
-  const now = new Date();
-  for (let i = 6; i >= 0; i--) {
-    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-    const next = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
-    volume.push({
-      date: day.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      count: recentQueries.filter(
-        (q) => q.createdAt >= day && q.createdAt < next
-      ).length,
-    });
-  }
-
+  const [total, resolved, announcements, activities] = await Promise.all([
+    prisma.query.count(),
+    prisma.query.count({ where: { status: "RESOLVED" } }),
+    prisma.announcement.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
+    prisma.auditLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      include: { actor: { select: { name: true } } },
+    }),
+  ]);
   const stats = [
     { label: "Submitted", value: total },
     { label: "Resolved", value: resolved },
@@ -58,46 +31,69 @@ export default async function AdminAnalyticsPage() {
     <main className="container-page">
       <div className="page-header">
         <div className="page-header-left">
-          <h1 className="page-title">Analytics Dashboard</h1>
-          <p className="page-subtitle">FR-10 - volume, routing, and resolution overview.</p>
+          <h1 className="page-title">Admin Overview</h1>
+          <p className="page-subtitle">A quick view of platform activity and recent administration work.</p>
         </div>
       </div>
 
       <div className="stats-grid" style={{ marginTop: 8 }}>
-        {stats.map((s) => (
-          <div key={s.label} className="stat-card">
-            <p className="stat-label">{s.label}</p>
-            <p className="stat-value">{s.value}</p>
+        {stats.map((stat) => (
+          <div key={stat.label} className="stat-card">
+            <p className="stat-label">{stat.label}</p>
+            <p className="stat-value">{stat.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid-2" style={{ marginTop: 28 }}>
-        <section className="card">
-          <div className="card-header">
-            <span className="card-title">Queries by status</span>
-          </div>
-          <div style={{ padding: "4px 0 12px" }}>
-            <StatusPie data={statusData} />
-          </div>
-        </section>
-        <section className="card">
-          <div className="card-header">
-            <span className="card-title">Queries by department</span>
-          </div>
-          <div style={{ padding: "4px 0 12px" }}>
-            <DeptBar data={deptData} />
-          </div>
-        </section>
-        <section className="card" style={{ gridColumn: "1 / -1" }}>
-          <div className="card-header">
-            <span className="card-title">Volume - last 7 days</span>
-          </div>
-          <div style={{ padding: "4px 0 12px" }}>
-            <VolumeLine data={volume} />
-          </div>
-        </section>
-      </div>
+      <section style={{ marginTop: 28 }}>
+        <div className="section-heading-row">
+          <h2 className="card-title">Recent announcements</h2>
+          <Link href="/admin/announcements" className="btn btn-ghost btn-sm">View all</Link>
+        </div>
+        <div className="table-wrap">
+          {announcements.length === 0 ? (
+            <div className="empty-state">No announcements published yet.</div>
+          ) : (
+            <table className="table table-stripe">
+              <thead><tr><th>Subject</th><th>Posted date</th></tr></thead>
+              <tbody>
+                {announcements.map((announcement) => (
+                  <tr key={announcement.id}>
+                    <td>{announcement.title}</td>
+                    <td className="mono-sm">{new Date(announcement.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </section>
+
+      <section style={{ marginTop: 28 }}>
+        <div className="section-heading-row">
+          <h2 className="card-title">Recent activities</h2>
+          <Link href="/admin/audit" className="btn btn-ghost btn-sm">View all</Link>
+        </div>
+        <div className="table-wrap">
+          {activities.length === 0 ? (
+            <div className="empty-state">No recent activity recorded.</div>
+          ) : (
+            <table className="table table-stripe">
+              <thead><tr><th>Action</th><th>Actor</th><th>Entity</th><th>Time</th></tr></thead>
+              <tbody>
+                {activities.map((activity) => (
+                  <tr key={activity.id}>
+                    <td><span className="badge badge-subtle">{label(activity.action)}</span></td>
+                    <td>{activity.actor?.name ?? "System"}</td>
+                    <td>{label(activity.entityType)}</td>
+                    <td className="mono-sm">{new Date(activity.createdAt).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </section>
     </main>
   );
 }
