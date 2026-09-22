@@ -13,6 +13,8 @@
 type WhatsAppInst = { connect: () => Promise<void>; sendMessage: (to: string, content: unknown) => Promise<void>; logout: () => Promise<void>; ev?: { isConnected?: () => boolean } };
 type WhatsAppMaker = () => WhatsAppInst | Promise<WhatsAppInst>;
 
+export const whatsappEnabled = process.env.WHATSAPP_ENABLED === "true";
+
 type WhatsAppState = {
   maker: WhatsAppMaker | null;
   inst: WhatsAppInst | null;
@@ -98,6 +100,10 @@ export async function getInst(): Promise<WhatsAppInst> {
 
 /** Send a text reply to a phone number (E.164, e.g. "+923001234567"). */
 export async function sendWhatsAppReply(to: string, text: string) {
+  if (!whatsappEnabled) {
+    console.info("WhatsApp notification skipped: WHATSAPP_ENABLED is not true.");
+    return;
+  }
   await ensureWhatsAppMaker();
   const inst = await getInst();
   await inst.sendMessage(to, { text, type: "chat" });

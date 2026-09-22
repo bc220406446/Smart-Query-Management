@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { sendWhatsAppReply } from "@/lib/whatsapp";
+import { sendWhatsAppReply, whatsappEnabled } from "@/lib/whatsapp";
 
 const sendSchema = z.object({
   to: z.string().min(1, "Recipient phone is required"),
@@ -10,6 +10,7 @@ const sendSchema = z.object({
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  if (!whatsappEnabled) return NextResponse.json({ error: "WhatsApp is disabled in this deployment" }, { status: 503 });
   try {
     const parsed = sendSchema.safeParse(await request.json());
     if (!parsed.success) {
