@@ -113,6 +113,12 @@ export function isUserTextMessage(msg: { from?: string; body?: string; isGroupMs
   return { from, body: content.trim(), fromMe: Boolean(msg.fromMe) };
 }
 
+/** Normalize WhatsApp sender IDs and profile phone values for exact matching. */
+export function normalizeWhatsAppPhone(value: string | null | undefined) {
+  if (!value) return "";
+  return value.replace(/@(?:c\.us|lid|g\.us)$/i, "").replace(/\D/g, "");
+}
+
 /**
  * Create a database query from a normalized WhatsApp message.
  * `studentUserIds` maps a phone (E.164 without + ) → an existing User id so
@@ -134,9 +140,13 @@ export async function createQueryFromWhatsApp(
   }) => Promise<{ id: string; ticketNumber: string }>
 ) {
   // Phone number from `from` - strip leading "+" if present.
-  const phoneRaw = body.from.includes("@") ? body.from : body.from.replace(/^\+/, "");
+  const phoneRaw = normalizeWhatsAppPhone(body.from);
   // If it is a group, ignore (handled above in isUserTextMessage).
   const studentId = studentUserIds[phoneRaw] ?? null;
+
+  // Never create an anonymous WhatsApp query. The support inbox is only for
+  // registered students whose phone number was verified in their profile.
+  if (!studentId) return null;
 
   const subject = body.body.slice(0, 120) || "WhatsApp message";
   const message = body.body;

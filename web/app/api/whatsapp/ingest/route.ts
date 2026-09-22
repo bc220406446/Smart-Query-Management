@@ -4,7 +4,7 @@ import { QueryChannel } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { recordAudit } from "@/lib/audit";
 import { splitIncomingQuery } from "@/lib/query-submission";
-import {} from "@/lib/whatsapp";
+import { normalizeWhatsAppPhone } from "@/lib/whatsapp";
 // createQueryFromWhatsApp / WhatsAppUserMap imported for future use.
 
 export const dynamic = "force-dynamic";
@@ -26,14 +26,18 @@ export async function POST(request: Request) {
 
     const { from, body: message, studentId } = parsed.data;
 
-    const normalizedFrom = from.replace(/\D/g, "");
-    const student = await prisma.user.findFirst({ where: { phone: { in: [from, `+${normalizedFrom}`, normalizedFrom] }, role: "STUDENT" }, select: { id: true } });
+    const normalizedFrom = normalizeWhatsAppPhone(from);
+    const students = await prisma.user.findMany({ where: { role: "STUDENT", phone: { not: null } }, select: { id: true, phone: true } });
+    const student = students.find((candidate) => normalizeWhatsAppPhone(candidate.phone) === normalizedFrom);
+    if (!student) {
+      return NextResponse.json({ ok: true, ignored: true, reason: "sender_not_registered" });
+    }
     const query = await prisma.query.create({
       data: {
         ...splitIncomingQuery(undefined, message),
         channel: QueryChannel.WHATSAPP,
         status: "SUBMITTED",
-        studentId: student?.id ?? studentId ?? null,
+        studentId: student.id,
       },
     });
 

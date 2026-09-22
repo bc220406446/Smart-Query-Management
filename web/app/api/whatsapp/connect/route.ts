@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { connectWhatsApp, isUserTextMessage, setWhatsAppMaker } from "@/lib/whatsapp";
+import { connectWhatsApp, isUserTextMessage, normalizeWhatsAppPhone, setWhatsAppMaker } from "@/lib/whatsapp";
 import { prisma } from "@/lib/prisma";
 import { recordAudit } from "@/lib/audit";
 import { splitIncomingQuery } from "@/lib/query-submission";
@@ -42,15 +42,21 @@ async function initializeWhatsApp() {
       } catch { /* keep the original sender id */ }
       const normalized = isUserTextMessage({ ...message, from: sender });
       if (!normalized || normalized.fromMe) return;
-      const phone = normalized.from.replace(/\D/g, "");
-      const student = await prisma.user.findFirst({
-        where: { phone: { in: [normalized.from, `+${phone}`, phone] }, role: "STUDENT" },
+      const phone = normalizeWhatsAppPhone(normalized.from);
+      if (!phone) return;
+      const students = await prisma.user.findMany({
+        where: { role: "STUDENT", phone: { not: null } },
         select: { id: true, phone: true },
       });
+      const student = students.find((candidate) => normalizeWhatsAppPhone(candidate.phone) === phone);
+      if (!student) {
+        console.info("Ignoring WhatsApp message from unregistered number", { from: normalized.from, phone });
+        return;
+      }
       const submission = splitIncomingQuery(undefined, normalized.body);
-      const query = await prisma.query.create({ data: { subject: submission.subject, message: submission.message, channel: "WHATSAPP", status: "SUBMITTED", studentId: student?.id ?? null } });
+      const query = await prisma.query.create({ data: { subject: submission.subject, message: submission.message, channel: "WHATSAPP", status: "SUBMITTED", studentId: student.id } });
       await recordAudit({ actorId: null, action: "query_submitted", entityType: "query", entityId: query.id, metadata: { channel: "WHATSAPP", from: normalized.from } });
-      console.info("Created WhatsApp query %s from %s; matched student %s (stored phone %s)", query.id, normalized.from, student?.id ?? "none", student?.phone ?? "none");
+      console.info("Created WhatsApp query %s from %s; matched student %s (stored phone %s)", query.id, normalized.from, student.id, student.phone);
     });
     return {
       connect: async () => { await client.initialize(); },
