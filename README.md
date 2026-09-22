@@ -162,10 +162,18 @@ SMTP_PASS=<google-app-password>
 EMAIL_FROM=<sender-address>
 AUTH_GITHUB_ID=<github-oauth-client-id>
 AUTH_GITHUB_SECRET=<github-oauth-client-secret>
+WHATSAPP_INCOMING_ENABLED=false
+WHATSAPP_ENABLED=false
 ```
 
 The login screen supports Google, GitHub, and email OTP. Configure the OAuth
 providers you want to offer; email OTP works independently through SMTP.
+
+Keep `WHATSAPP_ENABLED=false` for Vercel/serverless deployments. The local
+WhatsApp Web integration requires a persistent process and browser/session
+storage, so it should run on a VPS or another always-on worker. Set both
+`WHATSAPP_ENABLED=true` and `WHATSAPP_INCOMING_ENABLED=true` only on that
+persistent host when incoming messages should become portal queries.
 
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are used by
 browser-side Supabase features. Never commit `.env` files, database passwords,

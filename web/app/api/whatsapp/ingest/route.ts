@@ -8,6 +8,7 @@ import { normalizeWhatsAppPhone } from "@/lib/whatsapp";
 // createQueryFromWhatsApp / WhatsAppUserMap imported for future use.
 
 export const dynamic = "force-dynamic";
+const whatsappIncomingEnabled = process.env.WHATSAPP_INCOMING_ENABLED === "true";
 
 const ingestSchema = z.object({
   from: z.string().min(1, "Phone / sender is required"),
@@ -18,6 +19,9 @@ const ingestSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    if (!whatsappIncomingEnabled) {
+      return NextResponse.json({ ok: true, ignored: true, reason: "whatsapp_incoming_disabled" });
+    }
     const body = await request.json();
     const parsed = ingestSchema.safeParse(body);
     if (!parsed.success) {

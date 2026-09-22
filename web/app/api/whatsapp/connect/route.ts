@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { connectWhatsApp, isUserTextMessage, normalizeWhatsAppPhone, setWhatsAppMaker } from "@/lib/whatsapp";
+import { connectWhatsApp, isUserTextMessage, normalizeWhatsAppPhone, setWhatsAppMaker, whatsappEnabled } from "@/lib/whatsapp";
 import { prisma } from "@/lib/prisma";
 import { recordAudit } from "@/lib/audit";
 import { splitIncomingQuery } from "@/lib/query-submission";
 
 export const dynamic = "force-dynamic";
 let initialized = false;
+const whatsappIncomingEnabled = process.env.WHATSAPP_INCOMING_ENABLED === "true";
 
 async function initializeWhatsApp() {
   if (initialized) return;
@@ -24,7 +25,7 @@ async function initializeWhatsApp() {
     });
     client.on("qr", (code: string) => { console.log("Scan this WhatsApp QR code:"); qrTerminal.generate(code, { small: true }); });
     client.on("ready", () => { ready = true; console.info("WhatsApp support account is ready."); });
-    client.on("message", async (message: { from: string; body: string; fromMe: boolean; isGroupMsg: boolean; getContact?: () => Promise<{ number?: string; id?: { _serialized?: string; user?: string } }> }) => {
+    if (whatsappIncomingEnabled) client.on("message", async (message: { from: string; body: string; fromMe: boolean; isGroupMsg: boolean; getContact?: () => Promise<{ number?: string; id?: { _serialized?: string; user?: string } }> }) => {
       // WhatsApp may deliver a privacy-preserving LID such as 12345@lid.
       // Resolve it through the contact record before matching User.phone.
       let sender = message.from;
@@ -69,8 +70,9 @@ async function initializeWhatsApp() {
 }
 
 export async function POST() {
+  if (!whatsappEnabled) return NextResponse.json({ ok: false, status: "disabled" }, { status: 503 });
   try { await initializeWhatsApp(); void connectWhatsApp().catch((error) => console.error("WhatsApp connect error:", error)); return NextResponse.json({ ok: true, status: "pairing_started" }, { status: 202 }); }
   catch (error) { console.error("Could not initialize WhatsApp:", error); return NextResponse.json({ error: "WhatsApp unavailable" }, { status: 503 }); }
 }
 
-export async function GET() { return NextResponse.json({ status: "ready" }); }
+export async function GET() { return NextResponse.json({ status: whatsappEnabled ? "ready" : "disabled" }); }
