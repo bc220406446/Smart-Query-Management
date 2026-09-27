@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 // Keep middleware Edge-safe. Auth.js imports Prisma through lib/auth, and the
 // Prisma PostgreSQL adapter is Node-only. Protected pages/API routes perform
 // their session checks in the server runtime instead.
-export function middleware() {
+export function proxy() {
   return NextResponse.next();
 }
 
