@@ -38,7 +38,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   providers: [
     Google,
-    GitHub,
+    // GitHub users may already have an account created through Google or
+    // credentials. GitHub returns a verified email, so allow that provider
+    // to link to the existing email account instead of showing
+    // OAuthAccountNotLinked.
+    GitHub({ allowDangerousEmailAccountLinking: true }),
     Credentials({
       name: "email-password",
       credentials: {
