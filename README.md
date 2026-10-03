@@ -96,15 +96,12 @@ Both services connect to the same Supabase database using connection strings sup
 - **Labeled test set:** a held-out set of sample queries with known correct category/department labels — used to measure classifier accuracy/precision/recall per class, not just overall accuracy. *(size and source: TBD)*
 - **Confidence threshold:** low-confidence classifications are routed for manual review rather than auto-assigned.
 - **Human override rate:** tracked as a signal of how often the automated routing decision is corrected by staff.
-- **Escalation accuracy:** whether escalated queries were genuinely at risk of going unresolved, vs. false escalations.
 
 Numbers will be added here once the test set and provider configuration are finalized — this section intentionally stays empty of invented metrics until real results exist.
 
 ## Limitations
 
 - The default classifier is rules-based rather than learned, so accuracy depends on how well the rules generalize to query phrasing not seen during design; this is why optional AI-provider packages and the evaluation work above exist.
-- WhatsApp ingestion depends on a single linked support number via `whatsapp-web.js` (an unofficial client that drives WhatsApp Web through Puppeteer) rather than the official WhatsApp Cloud API — intended as a stand-in that can be swapped later without changing the query workflow. This also means the session is tied to one Chrome/Chromium install and one QR-paired device.
-- Email ingestion requires either a mailbox poller or an external provider webhook; SMTP alone does not receive incoming mail.
 - No load/scale testing has been done — the system has been exercised with local and small-scale test data, not production volumes.
 
 ## Future Work
@@ -112,7 +109,6 @@ Numbers will be added here once the test set and provider configuration are fina
 - Fill in the Evaluation section with a real labeled test set, baseline comparisons (rules-based vs. an enabled AI-provider classifier), and per-class precision/recall.
 - Replace the `whatsapp-web.js` adapter with the official WhatsApp Cloud API.
 - Add load testing and monitoring for the escalation scheduler at production-like query volumes.
-- Expand the audit log into a reviewable trail for HOD-level accountability reporting.
 
 ## Requirements
 
